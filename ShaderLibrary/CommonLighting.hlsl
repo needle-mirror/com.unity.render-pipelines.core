@@ -166,15 +166,19 @@ real EllipsoidalDistanceAttenuation(real3 unL, real3 invHalfDim,
 real BoxDistanceAttenuation(real3 unL, real3 invHalfDim,
                             real rangeAttenuationScale, real rangeAttenuationBias)
 {
+    float attenuation = 0.0;
+
     // Transform the light vector so that we can work with
     // with the box as if it was a [-1, 1]^2 cube.
     unL *= invHalfDim;
 
     // Our algorithm expects the input vector to be within the cube.
-    if (Max3(abs(unL.x), abs(unL.y), abs(unL.z)) > 1.0) return 0.0;
-
-    real sqDist = ComputeCubeToSphereMapSqMagnitude(unL);
-    return SmoothDistanceWindowing(sqDist, rangeAttenuationScale, rangeAttenuationBias);
+    if (!(Max3(abs(unL.x), abs(unL.y), abs(unL.z)) > 1.0))
+    {
+        real sqDist = ComputeCubeToSphereMapSqMagnitude(unL);
+        attenuation = SmoothDistanceWindowing(sqDist, rangeAttenuationScale, rangeAttenuationBias);
+    }
+    return attenuation;
 }
 
 //-----------------------------------------------------------------------------
@@ -280,13 +284,12 @@ real ComputeWrappedDiffuseLighting(real NdotL, real w)
 }
 
 // Ref: The Technical Art of Uncharted 4 - Brinck and Maximov 2016
-real GetMicroshadowing(real NdotL, real AO, real opacity)
+real ComputeMicroShadowing(real AO, real NdotL, real opacity)
 {
 	real aperture = 2.0 * AO * AO;
 	real microshadow = saturate(NdotL + aperture - 1.0);
 	return lerp(1.0, microshadow, opacity);
 }
-
 
 //-----------------------------------------------------------------------------
 // Helper functions
@@ -303,7 +306,7 @@ void GetBSDFAngle(float3 V, float3 L, float NdotL, float unclampNdotV, out float
 {
     // Optimized math. Ref: PBR Diffuse Lighting for GGX + Smith Microsurfaces (slide 114).
     LdotV = dot(L, V);
-    invLenLV = rsqrt(max(2.0 * LdotV + 2.0, FLT_EPS));    // invLenLV = rcp(length(L + V)), clamp to avoid rsqrt(0) = NaN
+    invLenLV = rsqrt(max(2.0 * LdotV + 2.0, FLT_EPS));    // invLenLV = rcp(length(L + V)), clamp to avoid rsqrt(0) = inf, inf * 0 = NaN
     NdotH = saturate((NdotL + unclampNdotV) * invLenLV);        // Do not clamp NdotV here
     LdotH = saturate(invLenLV * LdotV + invLenLV);
     clampNdotV = ClampNdotV(unclampNdotV);
