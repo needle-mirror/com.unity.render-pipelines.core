@@ -1,7 +1,7 @@
 {
     "description": "Helper library for SRP that contains a new Shader Library, and utility functions that can be used to implement a custom SRP. This library is currently used by both the High Definition Render Pipeline and the Lightweight Render Pipeline.", 
     "displayName": "Core RP Library", 
-    "gitHead": "fc353aa8874574ebf9de4d6d458a44c1c58e40eb", 
+    "gitHead": "677b6ae9908f648fdee27573fb05a78c7a6cc7b4", 
     "name": "com.unity.render-pipelines.core", 
     "repoPackagePath": "com.unity.render-pipelines.core", 
     "repository": {
@@ -9,5 +9,5 @@
         "url": "ssh://git@github.com/Unity-Technologies/ScriptableRenderLoop.git"
     }, 
     "unity": "2018.3", 
-    "version": "4.2.0-preview"
+    "version": "4.3.0-preview"
 }
