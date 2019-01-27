@@ -4,10 +4,11 @@
     "name": "com.unity.render-pipelines.core", 
     "repoPackagePath": "com.unity.render-pipelines.core", 
     "repository": {
-        "revision": "b246f1bdb9ae4df3e1bde95d9927b5fc6e27b5f4", 
+        "revision": "529fcce0d7ad9c57af8e4eb3862f0c3b9d3de0bf", 
         "type": "git", 
         "url": "ssh://git@github.com/Unity-Technologies/ScriptableRenderLoop.git"
     }, 
     "unity": "2019.1", 
-    "version": "5.2.3"
+    "unityRelease": "0a14", 
+    "version": "5.3.1"
 }
