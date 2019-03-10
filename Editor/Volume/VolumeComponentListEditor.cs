@@ -41,9 +41,10 @@ namespace UnityEditor.Rendering
             m_Editors = new List<VolumeComponentEditor>();
 
             // Gets the list of all available component editors
-            var editorTypes = CoreUtils.GetAllTypesDerivedFrom<VolumeComponentEditor>()
+            var editorTypes = CoreUtils.GetAllAssemblyTypes()
                 .Where(
-                    t => t.IsDefined(typeof(VolumeComponentEditorAttribute), false)
+                    t => t.IsSubclassOf(typeof(VolumeComponentEditor))
+                    && t.IsDefined(typeof(VolumeComponentEditorAttribute), false)
                     && !t.IsAbstract
                     );
 

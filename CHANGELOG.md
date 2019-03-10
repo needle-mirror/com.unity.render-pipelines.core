@@ -4,34 +4,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [5.13.0] - 2019-04-15
+## [6.5.2] - 2019-03-11
 
-## [5.12.0] - 2019-04-11
+## [6.5.1] - 2019-03-08
+
+## [6.5.0] - 2019-03-07
+
+## [6.4.0] - 2019-02-21
 ### Added
 - Enabled support for CBUFFER on OpenGL Core and OpenGL ES 3 backends.
 
-### Fixed
-- Fixed compile errors in XRGraphics.cs when ENABLE_VR is not defined
+## [6.3.0] - 2019-02-18
 
-## [5.11.0] - 2019-04-01
+## [6.2.0] - 2019-02-15
 
-## [5.10.0] - 2019-03-19
+## [6.1.0] - 2019-02-13
 
-## [5.9.0] - 2019-03-15
-
-## [5.8.0] - 2019-03-13
-
-## [5.7.0] - 2019-03-07
-
-## [5.6.0] - 2019-02-21
-
-## [5.5.0] - 2019-02-18
-
-## [5.4.0] - 2019-02-11
-
-## [5.3.1] - 2019-01-28
-
-## [5.3.0] - 2019-01-28
+## [6.0.0] - 2019-02-23
 ### Fixed
 - Fixed a typo in ERROR_ON_UNSUPPORTED_FUNCTION() that was causing the shader compiler to run out of memory in GLES2. [Case 1104271] (https://issuetracker.unity3d.com/issues/mobile-os-restarts-because-of-high-memory-usage-when-compiling-shaders-for-opengles2)
 

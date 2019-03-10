@@ -70,10 +70,13 @@ real MipmapLevelToPerceptualRoughness(real mipmapLevel)
 // Anisotropic image based lighting
 //-----------------------------------------------------------------------------
 
-// T is the fiber axis (hair strand direction, root to tip).
-float3 ComputeViewFacingNormal(float3 V, float3 T)
+// Ref: Donald Revie - Implementing Fur Using Deferred Shading (GPU Pro 2)
+// The grain direction (e.g. hair or brush direction) is assumed to be orthogonal to the normal.
+// The returned normal is NOT normalized.
+real3 ComputeGrainNormal(real3 grainDir, real3 V)
 {
-    return Orthonormalize(V, T);
+    real3 B = cross(grainDir, V);
+    return cross(B, grainDir);
 }
 
 // Fake anisotropy by distorting the normal (non-negative anisotropy values only).
@@ -81,7 +84,7 @@ float3 ComputeViewFacingNormal(float3 V, float3 T)
 // Anisotropic ratio (0->no isotropic; 1->full anisotropy in tangent direction)
 real3 GetAnisotropicModifiedNormal(real3 grainDir, real3 N, real3 V, real anisotropy)
 {
-    real3 grainNormal = ComputeViewFacingNormal(V, grainDir);
+    real3 grainNormal = ComputeGrainNormal(grainDir, V);
     return normalize(lerp(N, grainNormal, anisotropy));
 }
 
