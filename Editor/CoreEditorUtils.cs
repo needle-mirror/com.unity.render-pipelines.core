@@ -13,6 +13,19 @@ namespace UnityEditor.Rendering
 
     public static class CoreEditorUtils
     {
+        [Obsolete("Use EditorGUIUtility.TrTextContent(<title>, <tooltip>) instead.")]
+        public static GUIContent GetContent(string textAndTooltip)
+        {
+            if (textAndTooltip == null)
+                return GUIContent.none; //done in TrTextContent but here we need to split...
+
+            var s = textAndTooltip.Split('|');
+            if (s.Length > 1)
+                return EditorGUIUtility.TrTextContent(s[0], s[1]);
+            else
+                return EditorGUIUtility.TrTextContent(s[0]);
+        }
+
         // Serialization helpers
         /// <summary>
         /// To use with extreme caution. It not really get the property but try to find a field with similar name
@@ -73,7 +86,9 @@ namespace UnityEditor.Rendering
         }
 
         public static void DrawMultipleFields(string label, SerializedProperty[] ppts, GUIContent[] lbls)
-            => DrawMultipleFields(EditorGUIUtility.TrTextContent(label), ppts, lbls);
+        {
+            DrawMultipleFields(EditorGUIUtility.TrTextContent(label), ppts, lbls);
+        }
 
         public static void DrawMultipleFields(GUIContent label, SerializedProperty[] ppts, GUIContent[] lbls)
         {
@@ -119,7 +134,9 @@ namespace UnityEditor.Rendering
         }
 
         public static void DrawHeader(string title)
-            => DrawHeader(EditorGUIUtility.TrTextContent(title));
+        {
+            DrawHeader(EditorGUIUtility.TrTextContent(title));
+        }
 
         public static void DrawHeader(GUIContent title)
         {
@@ -153,7 +170,9 @@ namespace UnityEditor.Rendering
         /// <param name="isAdvanced"> [optional] Delegate used to draw the right state of the advanced button. If null, no button drawn. </param>
         /// <param name="switchAdvanced"> [optional] Callback call when advanced button clicked. Should be used to toggle its state. </param>
         public static bool DrawHeaderFoldout(string title, bool state, bool isBoxed = false, Func<bool> isAdvanced = null, Action switchAdvanced = null)
-            => DrawHeaderFoldout(EditorGUIUtility.TrTextContent(title), state, isBoxed, isAdvanced, switchAdvanced);
+        {
+            return DrawHeaderFoldout(EditorGUIUtility.TrTextContent(title), state, isBoxed, isAdvanced, switchAdvanced);
+        }
 
         /// <summary> Draw a foldout header </summary>
         /// <param name="title"> The title of the header </param>
@@ -242,7 +261,9 @@ namespace UnityEditor.Rendering
         /// <param name="isAdvanced"> [optional] Delegate used to draw the right state of the advanced button. If null, no button drawn. </param>
         /// <param name="switchAdvanced"> [optional] Callback call when advanced button clicked. Should be used to toggle its state. </param>
         public static bool DrawSubHeaderFoldout(string title, bool state, bool isBoxed = false, Func<bool> isAdvanced = null, Action switchAdvanced = null)
-            => DrawSubHeaderFoldout(EditorGUIUtility.TrTextContent(title), state, isBoxed, isAdvanced, switchAdvanced);
+        {
+            return DrawSubHeaderFoldout(EditorGUIUtility.TrTextContent(title), state, isBoxed, isAdvanced, switchAdvanced);
+        }
 
         /// <summary> Draw a foldout header </summary>
         /// <param name="title"> The title of the header </param>
@@ -322,7 +343,9 @@ namespace UnityEditor.Rendering
         }
 
         public static bool DrawHeaderToggle(string title, SerializedProperty group, SerializedProperty activeField, Action<Vector2> contextAction = null)
-            => DrawHeaderToggle(EditorGUIUtility.TrTextContent(title), group, activeField, contextAction);
+        {
+            return DrawHeaderToggle(EditorGUIUtility.TrTextContent(title), group, activeField, contextAction);
+        }
 
         public static bool DrawHeaderToggle(GUIContent title, SerializedProperty group, SerializedProperty activeField, Action<Vector2> contextAction = null)
         {
@@ -405,7 +428,7 @@ namespace UnityEditor.Rendering
         const int k_DrawVector6Slider_LabelSize = 60;
         const int k_DrawVector6Slider_FieldSize = 80;
 
-        public static void DrawVector6(GUIContent label, SerializedProperty positive, SerializedProperty negative, Vector3 min, Vector3 max, Color[] colors = null, SerializedProperty multiplicator = null)
+        public static void DrawVector6(GUIContent label, ref Vector3 positive, ref Vector3 negative, Vector3 min, Vector3 max, Color[] colors = null)
         {
             if (colors != null && (colors.Length != 6))
                     throw new System.ArgumentException("Colors must be a 6 element array. [+X, +Y, +X, -X, -Y, -Z]");
@@ -415,54 +438,48 @@ namespace UnityEditor.Rendering
             if (label != GUIContent.none)
             {
                 var labelRect = rect;
-                labelRect.x -= 15f * EditorGUI.indentLevel;
+                labelRect.x -= 11f * EditorGUI.indentLevel;
                 labelRect.width = EditorGUIUtility.labelWidth;
                 EditorGUI.LabelField(labelRect, label);
-                rect.x += EditorGUIUtility.labelWidth - 1f - 15f * EditorGUI.indentLevel;
-                rect.width -= EditorGUIUtility.labelWidth - 1f - 15f * EditorGUI.indentLevel;
+                rect.x += EditorGUIUtility.labelWidth - 1f - 11f * EditorGUI.indentLevel;
+                rect.width -= EditorGUIUtility.labelWidth - 1f - 11f * EditorGUI.indentLevel;
             }
             
+            var v = positive;
             EditorGUI.BeginChangeCheck();
-            DrawVector3(rect, k_DrawVector6_Label, positive, min, max, false, colors == null ? null : new Color[] { colors[0], colors[1], colors[2] }, multiplicator);
+            v = DrawVector3(rect, k_DrawVector6_Label, v, min, max, false, colors == null ? null : new Color[] { colors[0], colors[1], colors[2] });
+            if (EditorGUI.EndChangeCheck())
+                positive = v;
 
             GUILayout.Space(EditorGUIUtility.standardVerticalSpacing);
 
             rect = EditorGUI.IndentedRect(GUILayoutUtility.GetRect(0, float.MaxValue, EditorGUIUtility.singleLineHeight, EditorGUIUtility.singleLineHeight));
-            rect.x += EditorGUIUtility.labelWidth - 1f - 15f * EditorGUI.indentLevel;
-            rect.width -= EditorGUIUtility.labelWidth - 1f - 15f * EditorGUI.indentLevel;
-            DrawVector3(rect, k_DrawVector6_Label, negative, min, max, true, colors == null ? null : new Color[] { colors[3], colors[4], colors[5] }, multiplicator);
-
+            rect.x += EditorGUIUtility.labelWidth - 1f - 11f * EditorGUI.indentLevel;
+            rect.width -= EditorGUIUtility.labelWidth - 1f - 11f * EditorGUI.indentLevel;
+            v = negative;
+            EditorGUI.BeginChangeCheck();
+            v = DrawVector3(rect, k_DrawVector6_Label, v, min, max, true, colors == null ? null : new Color[] { colors[3], colors[4], colors[5] });
+            if (EditorGUI.EndChangeCheck())
+                negative = v;
             GUILayout.EndVertical();
         }
 
-        static void DrawVector3(Rect rect, GUIContent[] labels, SerializedProperty value, Vector3 min, Vector3 max, bool addMinusPrefix, Color[] colors, SerializedProperty multiplicator = null)
+        static Vector3 DrawVector3(Rect rect, GUIContent[] labels, Vector3 value, Vector3 min, Vector3 max, bool addMinusPrefix, Color[] colors)
         {
-            float[] multifloat = multiplicator == null
-                ? new float[] { value.vector3Value.x, value.vector3Value.y, value.vector3Value.z }
-                : new float[] { value.vector3Value.x * multiplicator.vector3Value.x, value.vector3Value.y * multiplicator.vector3Value.y, value.vector3Value.z * multiplicator.vector3Value.z };
-
+            float[] multifloat = new float[] { value.x, value.y, value.z };
+            //rect = EditorGUI.IndentedRect(rect);
             float fieldWidth = rect.width / 3f;
-            EditorGUI.showMixedValue = value.hasMultipleDifferentValues;
             EditorGUI.BeginChangeCheck();
             EditorGUI.MultiFloatField(rect, labels, multifloat);
             if(EditorGUI.EndChangeCheck())
             {
-                value.vector3Value = multiplicator == null
-                    ? new Vector3(
-                        Mathf.Clamp(multifloat[0], min.x, max.x),
-                        Mathf.Clamp(multifloat[1], min.y, max.y),
-                        Mathf.Clamp(multifloat[2], min.z, max.z)
-                        )
-                    : new Vector3(
-                        Mathf.Clamp((multiplicator.vector3Value.x < -0.00001 || 0.00001 < multiplicator.vector3Value.x) ? multifloat[0] / multiplicator.vector3Value.x : 0f, min.x, max.x),
-                        Mathf.Clamp((multiplicator.vector3Value.y < -0.00001 || 0.00001 < multiplicator.vector3Value.y) ? multifloat[1] / multiplicator.vector3Value.y : 0f, min.y, max.y),
-                        Mathf.Clamp((multiplicator.vector3Value.z < -0.00001 || 0.00001 < multiplicator.vector3Value.z) ? multifloat[2] / multiplicator.vector3Value.z : 0f, min.z, max.z)
-                        );
+                value.x = Mathf.Max(Mathf.Min(multifloat[0], max.x), min.x);
+                value.y = Mathf.Max(Mathf.Min(multifloat[1], max.y), min.y);
+                value.z = Mathf.Max(Mathf.Min(multifloat[2], max.z), min.z);
             }
-            EditorGUI.showMixedValue = false;
 
             //Suffix is a hack as sublabel only work with 1 character
-            if (addMinusPrefix)
+            if(addMinusPrefix)
             {
                 Rect suffixRect = new Rect(rect.x - 4 - 15 * EditorGUI.indentLevel, rect.y, 100, rect.height);
                 for(int i = 0; i < 3; ++i)
@@ -495,6 +512,7 @@ namespace UnityEditor.Rendering
                 suffixRect.x += 1;
                 EditorGUI.LabelField(suffixRect, "|", colorMark);
             }
+            return value;
         }
 
         public static void DrawPopup(GUIContent label, SerializedProperty property, string[] options)
@@ -510,28 +528,10 @@ namespace UnityEditor.Rendering
                 property.intValue = mode;
         }
 
-        /// <summary>
-        /// Draw an EnumPopup handling multiEdition
-        /// </summary>
-        /// <param name="property"></param>
-        /// <param name="type"></param>
-        /// <param name="label"></param>
-        public static void DrawEnumPopup(SerializedProperty property, System.Type type, GUIContent label = null)
-        {
-            EditorGUI.showMixedValue = property.hasMultipleDifferentValues;
-            EditorGUI.BeginChangeCheck();
-            var name = System.Enum.GetName(type, property.intValue);
-            var index = System.Array.FindIndex(System.Enum.GetNames(type), n => n == name);
-            var input = (System.Enum)System.Enum.GetValues(type).GetValue(index);
-            var rawResult = EditorGUILayout.EnumPopup(label ?? EditorGUIUtility.TrTextContent(ObjectNames.NicifyVariableName(property.name)), input);
-            var result = ((System.IConvertible)rawResult).ToInt32(System.Globalization.CultureInfo.CurrentCulture);
-            if (EditorGUI.EndChangeCheck())
-                property.intValue = result;
-            EditorGUI.showMixedValue = false;
-        }
-
         public static void RemoveMaterialKeywords(Material material)
-            => material.shaderKeywords = null;
+        {
+            material.shaderKeywords = null;
+        }
 
         public static T[] GetAdditionalData<T>(UnityEngine.Object[] targets, Action<T> initDefault = null)
             where T : Component
@@ -557,7 +557,9 @@ namespace UnityEditor.Rendering
         }
 
         static public GameObject CreateGameObject(GameObject parent, string name, params Type[] types)
-            => ObjectFactory.CreateGameObject(GameObjectUtility.GetUniqueNameForSibling(parent != null ? parent.transform : null, name), types);
+        {
+            return ObjectFactory.CreateGameObject(GameObjectUtility.GetUniqueNameForSibling(parent != null ? parent.transform : null, name), types);
+        }
 
         static public string GetCurrentProjectVersion()
         {
