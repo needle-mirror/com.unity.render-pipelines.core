@@ -4,6 +4,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [5.13.0] - 2019-04-15
+
+## [5.12.0] - 2019-04-11
+### Added
+- Enabled support for CBUFFER on OpenGL Core and OpenGL ES 3 backends.
+
+### Fixed
+- Fixed compile errors in XRGraphics.cs when ENABLE_VR is not defined
+
+## [5.11.0] - 2019-04-01
+
 ## [5.10.0] - 2019-03-19
 
 ## [5.9.0] - 2019-03-15
