@@ -140,14 +140,13 @@ namespace UnityEngine.Experimental.Rendering
                 for (int m = 0; m < m_NumPanoMipLevels; m++)
                 {
                     m_StagingRTs[m] = new RenderTexture(Mathf.Max(1, panoWidthTop >> m), Mathf.Max(1, panoHeightTop >> m), 0, RenderTextureFormat.ARGBHalf) { hideFlags = HideFlags.HideAndDontSave };
-                    m_StagingRTs[m].name = CoreUtils.GetRenderTargetAutoName(Mathf.Max(1, panoWidthTop >> m), Mathf.Max(1, panoHeightTop >> m), RenderTextureFormat.ARGBHalf, String.Format("PanaCache{0}", m));
+                    m_StagingRTs[m].name = CoreUtils.GetRenderTargetAutoName(Mathf.Max(1, panoWidthTop >> m), Mathf.Max(1, panoHeightTop >> m), 1, RenderTextureFormat.ARGBHalf, String.Format("PanaCache{0}", m));
                 }
 
                 if (m_CubeBlitMaterial)
                 {
                     m_CubeMipLevelPropName = Shader.PropertyToID("_cubeMipLvl");
                     m_cubeSrcTexPropName = Shader.PropertyToID("_srcCubeTexture");
-
                 }
             }
             else
@@ -210,9 +209,6 @@ namespace UnityEngine.Experimental.Rendering
                 {
                     case BuildTarget.iOS:
                     case BuildTarget.Android:
-#if !UNITY_2018_2_OR_NEWER
-                    case BuildTarget.Tizen:
-#endif
                     case BuildTarget.WSAPlayer:
                         // Note: We return true on purpose even if Windows Store Apps are running on Desktop.
                         return true;
@@ -299,7 +295,7 @@ namespace UnityEngine.Experimental.Rendering
             }
 
             // If no existing copy found in the array
-            if(sliceIndex == -1)
+            if (sliceIndex == -1)
             {
                 // look for first non zero entry. Will by the least recently used entry
                 // since the array was pre-sorted (in linear time) in NewFrame()
@@ -330,14 +326,13 @@ namespace UnityEngine.Experimental.Rendering
                 }
             }
 
-            if(sliceIndex != -1)
+            if (sliceIndex != -1)
             {
                 m_SliceArray[sliceIndex].countLRU = 0;      // mark slice as in use this frame
             }
 
             return sliceIndex;
         }
-
 
         // In case the texture content with which we update the cache is not the input texture, we need to provide the right update count.
         public void UpdateSlice(CommandBuffer cmd, int sliceIndex, Texture content, uint textureHash)
@@ -358,7 +353,7 @@ namespace UnityEngine.Experimental.Rendering
             UpdateSlice(cmd, sliceIndex, content, GetTextureHash(content));
         }
 
-        public int FetchSlice(CommandBuffer cmd, Texture texture, bool forceReinject=false)
+        public int FetchSlice(CommandBuffer cmd, Texture texture, bool forceReinject = false)
         {
             bool needUpdate = false;
             var sliceIndex = ReserveSlice(texture, out needUpdate);

@@ -50,11 +50,11 @@ namespace UnityEditor.Experimental.Rendering
 
             // Look for all the valid parameter drawers
             var types = CoreUtils.GetAllAssemblyTypes()
-                            .Where(
-                                t => t.IsSubclassOf(typeof(VolumeParameterDrawer))
-                                  && t.IsDefined(typeof(VolumeParameterDrawerAttribute), false)
-                                  && !t.IsAbstract
-                            );
+                .Where(
+                    t => t.IsSubclassOf(typeof(VolumeParameterDrawer))
+                    && t.IsDefined(typeof(VolumeParameterDrawerAttribute), false)
+                    && !t.IsAbstract
+                    );
 
             // Store them
             foreach (var type in types)
@@ -90,7 +90,7 @@ namespace UnityEditor.Experimental.Rendering
                 .Where(t =>
                     (t.IsPublic && t.GetCustomAttributes(typeof(NonSerializedAttribute), false).Length == 0) ||
                     (t.GetCustomAttributes(typeof(SerializeField), false).Length > 0)
-                )
+                    )
                 .Where(t => t.GetCustomAttributes(typeof(HideInInspector), false).Length == 0)
                 .ToList();
 
@@ -254,11 +254,7 @@ namespace UnityEditor.Experimental.Rendering
         {
             var overrideRect = GUILayoutUtility.GetRect(17f, 17f, GUILayout.ExpandWidth(false));
             overrideRect.yMin += 4f;
-
-            var oldColor = GUI.color;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f, 0.75f);
             property.overrideState.boolValue = GUI.Toggle(overrideRect, property.overrideState.boolValue, CoreEditorUtils.GetContent("|Override this setting for this volume."), CoreEditorStyles.smallTickbox);
-            GUI.color = oldColor;
         }
     }
 }

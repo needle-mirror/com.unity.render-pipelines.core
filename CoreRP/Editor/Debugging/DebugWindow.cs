@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Callbacks;
@@ -10,7 +10,7 @@ namespace UnityEditor.Experimental.Rendering
     #pragma warning disable 414
 
     [Serializable]
-    sealed class WidgetStateDictionary : SerializedDictionary<string, DebugState> { }
+    sealed class WidgetStateDictionary : SerializedDictionary<string, DebugState> {}
 
     sealed class DebugWindowSettings : ScriptableObject
     {
@@ -47,11 +47,6 @@ namespace UnityEditor.Experimental.Rendering
         static Dictionary<Type, Type> s_WidgetStateMap; // DebugUI.Widget type -> DebugState type
         static Dictionary<Type, DebugUIDrawer> s_WidgetDrawerMap; // DebugUI.Widget type -> DebugUIDrawer
 
-        bool m_IsActiveInPlayMode
-        {
-            get { return Application.isPlaying && DebugManager.instance.displayRuntimeUI; }
-        }
-
         [DidReloadScripts]
         static void OnEditorReload()
         {
@@ -66,11 +61,11 @@ namespace UnityEditor.Experimental.Rendering
             // serialize is the same)
             var attrType = typeof(DebugStateAttribute);
             var stateTypes = assemblyTypes
-                                .Where(
-                                    t => t.IsSubclassOf(typeof(DebugState))
-                                      && t.IsDefined(attrType, false)
-                                      && !t.IsAbstract
-                                );
+                .Where(
+                    t => t.IsSubclassOf(typeof(DebugState))
+                    && t.IsDefined(attrType, false)
+                    && !t.IsAbstract
+                    );
 
             s_WidgetStateMap = new Dictionary<Type, Type>();
 
@@ -85,11 +80,11 @@ namespace UnityEditor.Experimental.Rendering
             // Drawers
             attrType = typeof(DebugUIDrawerAttribute);
             var types = assemblyTypes
-                            .Where(
-                                t => t.IsSubclassOf(typeof(DebugUIDrawer))
-                                  && t.IsDefined(attrType, false)
-                                  && !t.IsAbstract
-                            );
+                .Where(
+                    t => t.IsSubclassOf(typeof(DebugUIDrawer))
+                    && t.IsDefined(attrType, false)
+                    && !t.IsAbstract
+                    );
 
             s_WidgetDrawerMap = new Dictionary<Type, DebugUIDrawer>();
 
@@ -104,15 +99,17 @@ namespace UnityEditor.Experimental.Rendering
             s_TypeMapDirty = false;
         }
 
-        [MenuItem("Window/Render Pipeline/Debug Window", priority = CoreUtils.editMenuPriority2)]
+        [MenuItem("Window/General/Render Pipeline Debug", priority = CoreUtils.editMenuPriority2)]
         static void Init()
         {
             var window = GetWindow<DebugWindow>();
-            window.titleContent = new GUIContent("Debugging");
+            window.titleContent = new GUIContent("Debug");
         }
 
         void OnEnable()
         {
+            DebugManager.instance.refreshEditorRequested = false;
+
             hideFlags = HideFlags.HideAndDontSave;
             autoRepaintOnSceneChange = true;
 
@@ -133,6 +130,14 @@ namespace UnityEditor.Experimental.Rendering
             // First init
             m_DebugTreeState = DebugManager.instance.GetState();
             UpdateWidgetStates();
+
+            EditorApplication.update -= Repaint;
+            var panels = DebugManager.instance.panels;
+            var selectedPanelIndex = m_Settings.selectedPanel;
+            if (selectedPanelIndex >= 0
+                && selectedPanelIndex < panels.Count
+                && panels[selectedPanelIndex].editorForceUpdate)
+                EditorApplication.update += Repaint;
         }
 
         // Note: this won't get called if the window is opened when the editor itself is closed
@@ -141,6 +146,11 @@ namespace UnityEditor.Experimental.Rendering
             DebugManager.instance.onSetDirty -= MarkDirty;
             Undo.ClearUndo(m_Settings);
 
+            DestroyWidgetStates();
+        }
+
+        public void DestroyWidgetStates()
+        {
             if (m_WidgetStates != null)
             {
                 // Clear all the states from memory
@@ -159,7 +169,7 @@ namespace UnityEditor.Experimental.Rendering
         {
             foreach (var state in m_WidgetStates)
             {
-                if(state.Value == null)
+                if (state.Value == null)
                 {
                     return false;
                 }
@@ -279,8 +289,13 @@ namespace UnityEditor.Experimental.Rendering
 
         void Update()
         {
-            if (m_IsActiveInPlayMode)
-                return;
+            // If the render pipeline asset has been reloaded we force-refresh widget states in case
+            // some debug values need to be refresh/recreated as well (e.g. frame settings on HD)
+            if (DebugManager.instance.refreshEditorRequested)
+            {
+                DestroyWidgetStates();
+                DebugManager.instance.refreshEditorRequested = false;
+            }
 
             int treeState = DebugManager.instance.GetState();
 
@@ -297,12 +312,6 @@ namespace UnityEditor.Experimental.Rendering
         {
             if (s_Styles == null)
                 s_Styles = new Styles();
-
-            if (m_IsActiveInPlayMode)
-            {
-                EditorGUILayout.HelpBox("The editor debug window is disabled while the runtime one is active.", MessageType.Info);
-                return;
-            }
 
             var panels = DebugManager.instance.panels;
             int itemCount = panels.Count(x => !x.isRuntimeOnly && x.children.Count(w => !w.isRuntimeOnly) > 0);
@@ -362,6 +371,13 @@ namespace UnityEditor.Experimental.Rendering
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RegisterCompleteObjectUndo(m_Settings, "Debug Panel Selection");
+                            var previousPanel = m_Settings.selectedPanel >= 0 && m_Settings.selectedPanel < panels.Count
+                                ? panels[m_Settings.selectedPanel]
+                                : null;
+                            if (previousPanel != null && previousPanel.editorForceUpdate && !panel.editorForceUpdate)
+                                EditorApplication.update -= Repaint;
+                            else if ((previousPanel == null || !previousPanel.editorForceUpdate) && panel.editorForceUpdate)
+                                EditorApplication.update += Repaint;
                             m_Settings.selectedPanel = i;
                         }
                     }

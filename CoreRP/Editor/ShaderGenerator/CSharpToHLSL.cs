@@ -42,7 +42,10 @@ namespace UnityEditor.Experimental.Rendering
             s_TypeName = new Dictionary<string, ShaderTypeGenerator>();
 
             // Iterate over assemblyList, discover all applicable types with fully qualified names
-            var assemblyList = AppDomain.CurrentDomain.GetAssemblies().ToList();
+            var assemblyList = AppDomain.CurrentDomain.GetAssemblies()
+                // We need to exclude dynamic assemblies (their type can't be queried, throwing an exception below)
+                .Where(ass => !(ass.ManifestModule is System.Reflection.Emit.ModuleBuilder))
+                .ToList();
 
             foreach (var assembly in assemblyList)
             {
@@ -59,8 +62,8 @@ namespace UnityEditor.Experimental.Rendering
                             ShaderTypeGenerator gen;
                             if (s_TypeName.TryGetValue(type.FullName, out gen))
                             {
-                                Debug.LogError( "Duplicate typename with the GenerateHLSL attribute detected: " + type.FullName +
-                                                " declared in both " + gen.type.Assembly.FullName + " and " + type.Assembly.FullName + ".  Skipping the second instance.");
+                                Debug.LogError("Duplicate typename with the GenerateHLSL attribute detected: " + type.FullName +
+                                    " declared in both " + gen.type.Assembly.FullName + " and " + type.Assembly.FullName + ".  Skipping the second instance.");
                             }
                             s_TypeName[type.FullName] = new ShaderTypeGenerator(type, attr as GenerateHLSL);
                         }

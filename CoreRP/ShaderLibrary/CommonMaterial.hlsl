@@ -43,6 +43,11 @@ void ConvertAnisotropyToRoughness(real perceptualRoughness, real anisotropy, out
     roughnessB = roughness * (1 - anisotropy);
 }
 
+void ConvertRoughnessToAnisotropy(real roughnessT, real roughnessB, out real anisotropy)
+{
+    anisotropy = ((roughnessT - roughnessB) / (roughnessT + roughnessB + 0.0001));
+}
+
 // Same as ConvertAnisotropyToRoughness but
 // roughnessT and roughnessB are clamped, and are meant to be used with punctual and directional lights.
 void ConvertAnisotropyToClampRoughness(real perceptualRoughness, real anisotropy, out real roughnessT, out real roughnessB)
@@ -53,7 +58,7 @@ void ConvertAnisotropyToClampRoughness(real perceptualRoughness, real anisotropy
     roughnessB = ClampRoughnessForAnalyticalLights(roughnessB);
 }
 
-// Use with stack BRDF (clear coat / coat)
+// Use with stack BRDF (clear coat / coat) - This only used same equation to convert from Blinn-Phong spec power to Beckmann roughness
 real RoughnessToVariance(real roughness)
 {
     return 2.0 / Sq(roughness) - 2.0;
@@ -64,15 +69,89 @@ real VarianceToRoughness(real variance)
     return sqrt(2.0 / (variance + 2.0));
 }
 
-// same as regular refract except there is not the test for total internal reflection + the vector is flipped for processing
-real3 CoatRefract(real3 X, real3 N, real ieta)
+// Return modified perceptualSmoothness based on provided variance (get from GeometricNormalVariance + TextureNormalVariance)
+float NormalFiltering(float perceptualSmoothness, float variance, float threshold)
 {
-    real XdotN = saturate(dot(N, X));
-    return ieta * X + (sqrt(1 + ieta * ieta * (XdotN * XdotN - 1)) - ieta * XdotN) * N;
+    float roughness = PerceptualSmoothnessToRoughness(perceptualSmoothness);
+    // Ref: Geometry into Shading - http://graphics.pixar.com/library/BumpRoughness/paper.pdf - equation (3)
+    float squaredRoughness = saturate(roughness * roughness + min(2.0 * variance, threshold * threshold)); // threshold can be really low, square the value for easier control
+
+    return 1.0 - RoughnessToPerceptualRoughness(sqrt(squaredRoughness));
+}
+
+// Reference: Error Reduction and Simplification for Shading Anti-Aliasing
+// Specular antialiasing for geometry-induced normal (and NDF) variations: Tokuyoshi / Kaplanyan et al.'s method.
+// This is the deferred approximation, which works reasonably well so we keep it for forward too for now.
+// screenSpaceVariance should be at most 0.5^2 = 0.25, as that corresponds to considering
+// a gaussian pixel reconstruction kernel with a standard deviation of 0.5 of a pixel, thus 2 sigma covering the whole pixel.
+float GeometricNormalVariance(float3 geometricNormalWS, float screenSpaceVariance)
+{
+    float3 deltaU = ddx(geometricNormalWS);
+    float3 deltaV = ddy(geometricNormalWS);
+
+    return screenSpaceVariance * (dot(deltaU, deltaU) + dot(deltaV, deltaV));
+}
+
+// Return modified perceptualSmoothness
+float GeometricNormalFiltering(float perceptualSmoothness, float3 geometricNormalWS, float screenSpaceVariance, float threshold)
+{
+    float variance = GeometricNormalVariance(geometricNormalWS, screenSpaceVariance);
+    return NormalFiltering(perceptualSmoothness, variance, threshold);
+}
+
+// Normal map filtering based on The Order : 1886 SIGGRAPH course notes implementation.
+// Basically Toksvig with an intermediate single vMF lobe induced dispersion (Han et al. 2007)
+//
+// This returns 2 times the variance of the induced "mesoNDF" lobe (an NDF induced from a section of
+// the normal map) from the level 0 mip normals covered by the "current texel".
+//
+// avgNormalLength gives the dispersion information for the covered normals.
+//
+// Note that hw filtering on the normal map should be trilinear to be conservative, while anisotropic 
+// risk underfiltering. Could also compute average normal on the fly with a proper normal map format,
+// like Toksvig.
+float TextureNormalVariance(float avgNormalLength)
+{
+    if (avgNormalLength < 1.0)
+    {
+        float avgNormLen2 = avgNormalLength * avgNormalLength;
+        float kappa = (3.0 * avgNormalLength - avgNormalLength * avgNormLen2) / (1.0 - avgNormLen2);
+
+        // Ref: Frequency Domain Normal Map Filtering - http://www.cs.columbia.edu/cg/normalmap/normalmap.pdf (equation 21)
+        // Relationship between between the standard deviation of a Gaussian distribution and the roughness parameter of a Beckmann distribution.
+        // is roughness^2 = 2 variance    (note: variance is sigma^2)
+        // (Ref: Filtering Distributions of Normals for Shading Antialiasing - Equation just after (14))
+        // Relationship between gaussian lobe and vMF lobe is 2 * variance = 1 / (2 * kappa) = roughness^2
+        // (Equation 36 of  Normal map filtering based on The Order : 1886 SIGGRAPH course notes implementation).
+        // So to get variance we must use variance = 1 / (4 * kappa)
+        return 0.25 * kappa;
+    }
+
+    return 0.0;
+}
+
+float TextureNormalFiltering(float perceptualSmoothness, float avgNormalLength, float threshold)
+{
+    float variance = TextureNormalVariance(avgNormalLength);
+    return NormalFiltering(perceptualSmoothness, variance, threshold);
 }
 
 // ----------------------------------------------------------------------------
-// Parallax mapping
+// Helper for Disney parametrization
+// ----------------------------------------------------------------------------
+
+float3 ComputeDiffuseColor(float3 baseColor, float metallic)
+{
+    return baseColor * (1.0 - metallic);
+}
+
+float3 ComputeFresnel0(float3 baseColor, float metallic, float dielectricF0)
+{
+    return lerp(dielectricF0.xxx, baseColor, metallic);
+}
+
+// ----------------------------------------------------------------------------
+// Helper for normal blending
 // ----------------------------------------------------------------------------
 
 // ref https://www.gamedev.net/topic/678043-how-to-blend-world-space-normals/#entry5287707
@@ -107,6 +186,10 @@ real3 BlendNormal(real3 n1, real3 n2)
     return normalize(real3(n1.xy * n2.z + n2.xy * n1.z, n1.z * n2.z));
 }
 
+// ----------------------------------------------------------------------------
+// Helper for triplanar
+// ----------------------------------------------------------------------------
+
 // Ref: http://http.developer.nvidia.com/GPUGems3/gpugems3_ch01.html / http://www.slideshare.net/icastano/cascades-demo-secrets
 real3 ComputeTriplanarWeights(real3 normal)
 {
@@ -132,6 +215,10 @@ void GetTriplanarCoordinate(float3 position, out float2 uvXZ, out float2 uvXY, o
     uvZY = float2(position.z, position.y);
 }
 
+// ----------------------------------------------------------------------------
+// Helper for detail map operation
+// ----------------------------------------------------------------------------
+
 real LerpWhiteTo(real b, real t)
 {
     real oneMinusT = 1.0 - t;
@@ -143,6 +230,5 @@ real3 LerpWhiteTo(real3 b, real t)
     real oneMinusT = 1.0 - t;
     return real3(oneMinusT, oneMinusT, oneMinusT) + b * t;
 }
-
 
 #endif // UNITY_COMMON_MATERIAL_INCLUDED

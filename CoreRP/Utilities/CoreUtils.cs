@@ -108,7 +108,7 @@ namespace UnityEngine.Experimental.Rendering
         {
             get
             {
-                if(m_EmptyUAV == null)
+                if (m_EmptyUAV == null)
                 {
                     m_EmptyUAV = new RenderTexture(1, 1, 0);
                     m_EmptyUAV.enableRandomWrite = true;
@@ -116,6 +116,23 @@ namespace UnityEngine.Experimental.Rendering
                 }
 
                 return m_EmptyUAV;
+            }
+        }
+
+        static Texture3D m_BlackVolumeTexture;
+        public static Texture3D blackVolumeTexture
+        {
+            get
+            {
+                if (m_BlackVolumeTexture == null)
+                {
+                    Color[] colors = { Color.black };
+                    m_BlackVolumeTexture = new Texture3D(1, 1, 1, TextureFormat.ARGB32, false);
+                    m_BlackVolumeTexture.SetPixels(colors, 0);
+                    m_BlackVolumeTexture.Apply();
+                }
+
+                return m_BlackVolumeTexture;
             }
         }
 
@@ -169,26 +186,58 @@ namespace UnityEngine.Experimental.Rendering
             ClearRenderTarget(cmd, clearFlag, clearColor);
         }
 
-        public static string GetRenderTargetAutoName(int width, int height, RenderTextureFormat format, string name = "", bool mips = false, bool enableMSAA = false, MSAASamples msaaSamples = MSAASamples.None)
+        // Explicit load and store actions
+        public static void SetRenderTarget(CommandBuffer cmd, RenderTargetIdentifier buffer, RenderBufferLoadAction loadAction, RenderBufferStoreAction storeAction, ClearFlag clearFlag, Color clearColor)
         {
-            string temp;
+            cmd.SetRenderTarget(buffer, loadAction, storeAction);
+            ClearRenderTarget(cmd, clearFlag, clearColor);
+        }
+
+        public static void SetRenderTarget(CommandBuffer cmd, RenderTargetIdentifier buffer, RenderBufferLoadAction loadAction, RenderBufferStoreAction storeAction, ClearFlag clearFlag)
+        {
+            SetRenderTarget(cmd, buffer, loadAction, storeAction, clearFlag, clearColorAllBlack);
+        }
+
+        public static void SetRenderTarget(CommandBuffer cmd, RenderTargetIdentifier colorBuffer, RenderBufferLoadAction colorLoadAction, RenderBufferStoreAction colorStoreAction,
+            RenderTargetIdentifier depthBuffer, RenderBufferLoadAction depthLoadAction, RenderBufferStoreAction depthStoreAction,
+            ClearFlag clearFlag, Color clearColor)
+        {
+            cmd.SetRenderTarget(colorBuffer, colorLoadAction, colorStoreAction, depthBuffer, depthLoadAction, depthStoreAction);
+            ClearRenderTarget(cmd, clearFlag, clearColor);
+        }
+
+        public static void SetRenderTarget(CommandBuffer cmd, RenderTargetIdentifier colorBuffer, RenderBufferLoadAction colorLoadAction, RenderBufferStoreAction colorStoreAction,
+            RenderTargetIdentifier depthBuffer, RenderBufferLoadAction depthLoadAction, RenderBufferStoreAction depthStoreAction,
+            ClearFlag clearFlag)
+        {
+            SetRenderTarget(cmd, colorBuffer, colorLoadAction, colorStoreAction, depthBuffer, depthLoadAction, depthStoreAction, clearFlag, clearColorAllBlack);
+        }
+
+        public static string GetRenderTargetAutoName(int width, int height, int depth, RenderTextureFormat format, string name, bool mips = false, bool enableMSAA = false, MSAASamples msaaSamples = MSAASamples.None)
+        {
+            string result = string.Format("{0}_{1}x{2}", name, width, height);
+
+            if (depth > 1)
+                result = string.Format("{0}x{1}", result, depth);
+
+            if (mips)
+                result = string.Format("{0}_{1}", result, "Mips");
+
+            result = string.Format("{0}_{1}", result, format);
+
             if (enableMSAA)
-                temp = string.Format("{0}x{1}_{2}{3}_{4}", width, height, format, mips ? "_Mips"  : "", msaaSamples.ToString());
-            else
-                temp = string.Format("{0}x{1}_{2}{3}", width, height, format, mips ? "_Mips" : "");
+                result = string.Format("{0}_{1}", result, msaaSamples.ToString());
 
-            temp = String.Format("{0}_{1}", name == "" ? "RenderTarget" : name, temp);
-
-            return temp;
+            return result;
         }
 
         public static string GetTextureAutoName(int width, int height, TextureFormat format, TextureDimension dim = TextureDimension.None, string name = "", bool mips = false, int depth = 0)
         {
             string temp;
-            if(depth == 0)
-                temp = string.Format("{0}x{1}_{2}{3}", width, height, format, mips ? "_Mips" : "");
+            if (depth == 0)
+                temp = string.Format("{0}x{1}{2}_{3}", width, height, mips ? "_Mips" : "", format);
             else
-                temp = string.Format("{0}x{1}x{2}_{3}{4}", width, height, depth, format, mips ? "_Mips" : "");
+                temp = string.Format("{0}x{1}x{2}{3}_{4}", width, height, depth, mips ? "_Mips" : "", format);
             temp = String.Format("{0}_{1}_{2}", name == "" ? "Texture" : name, (dim == TextureDimension.None) ? "" : dim.ToString(), temp);
 
             return temp;
@@ -282,7 +331,14 @@ namespace UnityEngine.Experimental.Rendering
         // Unity specifics
         public static Material CreateEngineMaterial(string shaderPath)
         {
-            var mat = new Material(Shader.Find(shaderPath))
+            Shader shader = Shader.Find(shaderPath);
+            if (shader == null)
+            {
+                Debug.LogError("Cannot create required material because shader " + shaderPath + " could not be found");
+                return null;
+            }
+
+            var mat = new Material(shader)
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
@@ -291,11 +347,22 @@ namespace UnityEngine.Experimental.Rendering
 
         public static Material CreateEngineMaterial(Shader shader)
         {
+            if (shader == null)
+            {
+                Debug.LogError("Cannot create required material because shader is null");
+                return null;
+            }
+
             var mat = new Material(shader)
             {
                 hideFlags = HideFlags.HideAndDontSave
             };
             return mat;
+        }
+
+        public static bool HasFlag<T>(T mask, T flag) where T : IConvertible
+        {
+            return (mask.ToUInt32(null) & flag.ToUInt32(null)) != 0;
         }
 
         public static void SetKeyword(CommandBuffer cmd, string keyword, bool state)
@@ -362,7 +429,7 @@ namespace UnityEngine.Experimental.Rendering
                         {
                             innerTypes = t.GetTypes();
                         }
-                        catch { }
+                        catch {}
                         return innerTypes;
                     });
             }
@@ -460,6 +527,111 @@ namespace UnityEngine.Experimental.Rendering
 
             mesh.triangles = triangles;
             return mesh;
+        }
+
+        public static void DisplayUnsupportedMessage(string msg)
+        {
+            Debug.LogError(msg);
+
+#if UNITY_EDITOR
+            foreach (UnityEditor.SceneView sv in Resources.FindObjectsOfTypeAll(typeof(UnityEditor.SceneView)))
+                sv.ShowNotification(new GUIContent(msg));
+#endif
+        }
+
+        public static void DisplayUnsupportedAPIMessage()
+        {
+            string msg = "Platform " + SystemInfo.operatingSystem + " with device " + SystemInfo.graphicsDeviceType.ToString() + " is not supported, no rendering will occur";
+            DisplayUnsupportedMessage(msg);
+        }
+
+        public static void DisplayUnsupportedXRMessage()
+        {
+            string msg = "AR/VR devices are not supported, no rendering will occur";
+            DisplayUnsupportedMessage(msg);
+        }
+
+        // Returns 'true' if "Animated Materials" are enabled for the view associated with the given camera.
+        public static  bool AreAnimatedMaterialsEnabled(Camera camera)
+        {
+            bool animateMaterials = true;
+
+        #if UNITY_EDITOR
+            animateMaterials = Application.isPlaying;
+
+            if (camera.cameraType == CameraType.SceneView)
+            {
+                animateMaterials = false;
+
+                // Determine whether the "Animated Materials" checkbox is checked for the current view.
+                foreach (UnityEditor.SceneView sv in Resources.FindObjectsOfTypeAll(typeof(UnityEditor.SceneView)))
+                {
+                    if (sv.camera == camera && sv.sceneViewState.showMaterialUpdate)
+                    {
+                        animateMaterials = true;
+                        break;
+                    }
+                }
+            }
+            else if (camera.cameraType == CameraType.Preview)
+            {
+                animateMaterials = false;
+
+                // Determine whether the "Animated Materials" checkbox is checked for the current view.
+                foreach (UnityEditor.MaterialEditor med in Resources.FindObjectsOfTypeAll(typeof(UnityEditor.MaterialEditor)))
+                {
+                    // Warning: currently, there's no way to determine whether a given camera corresponds to this MaterialEditor.
+                    // Therefore, if at least one of the visible MaterialEditors is in Play Mode, all of them will play.
+                    if (med.isVisible && med.RequiresConstantRepaint())
+                    {
+                        animateMaterials = true;
+                        break;
+                    }
+                }
+            }
+
+            // TODO: how to handle reflection views? We don't know the parent window they are being rendered into,
+            // so we don't know whether we can animate them...
+            //
+            // IMHO, a better solution would be:
+            // A window invokes a camera render. The camera knows which window called it, so it can query its properies
+            // (such as animated materials). This camera provides the space-time position. It should also be able
+            // to access the rendering settings somehow. Using this information, it is then able to construct the
+            // primary view with information about camera-relative rendering, LOD, time, rendering passes/features
+            // enabled, etc. We then render this view. It can have multiple sub-views (shadows, reflections).
+            // They inherit all the properties of the primary view, but also have the ability to override them
+            // (e.g. primary cam pos and time are retained, matrices are modified, SSS and tessellation are disabled).
+            // These views can then have multiple sub-views (probably not practical for games),
+            // which simply amounts to a recursive call, and then the story repeats itself.
+            //
+            // TLDR: we need to know the caller and its status/properties to make decisions.
+        #endif
+
+            return animateMaterials;
+        }
+
+        public static bool IsSceneViewFogEnabled(Camera camera)
+        {
+            bool fogEnable = true;
+
+#if UNITY_EDITOR
+            if (camera.cameraType == CameraType.SceneView)
+            {
+                fogEnable = false;
+
+                // Determine whether the "Animated Materials" checkbox is checked for the current view.
+                foreach (UnityEditor.SceneView sv in Resources.FindObjectsOfTypeAll(typeof(UnityEditor.SceneView)))
+                {
+                    if (sv.camera == camera && sv.sceneViewState.showFog)
+                    {
+                        fogEnable = true;
+                        break;
+                    }
+                }
+            }
+#endif
+
+            return fogEnable;
         }
     }
 }

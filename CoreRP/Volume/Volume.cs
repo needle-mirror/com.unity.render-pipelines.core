@@ -62,6 +62,11 @@ namespace UnityEngine.Experimental.Rendering
             }
         }
 
+        public bool HasInstantiatedProfile()
+        {
+            return m_InternalProfile != null;
+        }
+
         // Needed for state tracking (see the comments in Update)
         int m_PreviousLayer;
         float m_PreviousPriority;
@@ -168,6 +173,7 @@ namespace UnityEngine.Experimental.Rendering
 
             colliders.Clear();
         }
+
 #endif
     }
 }

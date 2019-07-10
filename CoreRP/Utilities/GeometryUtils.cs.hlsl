@@ -8,40 +8,40 @@
 // PackingRules = Exact
 struct OrientedBBox
 {
-    float3 center;
-    float extentX;
     float3 right;
-    float extentY;
+    float extentX;
     float3 up;
+    float extentY;
+    float3 center;
     float extentZ;
 };
 
 //
 // Accessors for UnityEngine.Experimental.Rendering.OrientedBBox
 //
-float3 GetCenter(OrientedBBox value)
+float3 GetRight(OrientedBBox value)
 {
-	return value.center;
+    return value.right;
 }
 float GetExtentX(OrientedBBox value)
 {
-	return value.extentX;
-}
-float3 GetRight(OrientedBBox value)
-{
-	return value.right;
-}
-float GetExtentY(OrientedBBox value)
-{
-	return value.extentY;
+    return value.extentX;
 }
 float3 GetUp(OrientedBBox value)
 {
-	return value.up;
+    return value.up;
+}
+float GetExtentY(OrientedBBox value)
+{
+    return value.extentY;
+}
+float3 GetCenter(OrientedBBox value)
+{
+    return value.center;
 }
 float GetExtentZ(OrientedBBox value)
 {
-	return value.extentZ;
+    return value.extentZ;
 }
 
 
