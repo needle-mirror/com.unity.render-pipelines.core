@@ -1,4 +1,4 @@
-using UnityEngine;
+using System;
 using System.Collections.Generic;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -51,7 +51,7 @@ namespace UnityEngine.Experimental.Rendering
 
         public void Release()
         {
-            Texture.DestroyImmediate(m_Cache);      // do I need this?
+            CoreUtils.Destroy(m_Cache);
         }
     }
 
@@ -100,14 +100,14 @@ namespace UnityEngine.Experimental.Rendering
             return !TextureCache.supportsCubemapArrayTextures ? (Texture)m_CacheNoCubeArray : m_Cache;
         }
 
-        public bool AllocTextureArray(int numCubeMaps, int width, TextureFormat format, bool isMipMapped)
+        public bool AllocTextureArray(int numCubeMaps, int width, TextureFormat format, bool isMipMapped, Material cubeBlitMaterial)
         {
             var res = AllocTextureArray(numCubeMaps);
             m_NumMipLevels = GetNumMips(width, width);      // will calculate same way whether we have cube array or not
 
             if (!TextureCache.supportsCubemapArrayTextures)
             {
-                if (!m_CubeBlitMaterial) m_CubeBlitMaterial = new Material(Shader.Find("Hidden/CubeToPano")) { hideFlags = HideFlags.HideAndDontSave };
+                m_CubeBlitMaterial = cubeBlitMaterial;
 
                 int panoWidthTop = 4 * width;
                 int panoHeightTop = 2 * width;
@@ -128,12 +128,14 @@ namespace UnityEngine.Experimental.Rendering
                 for (int m = 0; m < m_NumPanoMipLevels; m++)
                 {
                     m_StagingRTs[m] = new RenderTexture(Mathf.Max(1, panoWidthTop >> m), Mathf.Max(1, panoHeightTop >> m), 0, RenderTextureFormat.ARGBHalf) { hideFlags = HideFlags.HideAndDontSave };
+                    m_StagingRTs[m].name = CoreUtils.GetRenderTargetAutoName(Mathf.Max(1, panoWidthTop >> m), Mathf.Max(1, panoHeightTop >> m), RenderTextureFormat.ARGBHalf, String.Format("PanaCache{0}", m));
                 }
 
                 if (m_CubeBlitMaterial)
                 {
                     m_CubeMipLevelPropName = Shader.PropertyToID("_cubeMipLvl");
                     m_cubeSrcTexPropName = Shader.PropertyToID("_srcCubeTexture");
+
                 }
             }
             else
@@ -154,16 +156,16 @@ namespace UnityEngine.Experimental.Rendering
         {
             if (m_CacheNoCubeArray)
             {
-                Texture.DestroyImmediate(m_CacheNoCubeArray);
+                CoreUtils.Destroy(m_CacheNoCubeArray);
                 for (int m = 0; m < m_NumPanoMipLevels; m++)
                 {
                     m_StagingRTs[m].Release();
                 }
                 m_StagingRTs = null;
-                if (m_CubeBlitMaterial) Material.DestroyImmediate(m_CubeBlitMaterial);
+                CoreUtils.Destroy(m_CubeBlitMaterial);
             }
-            if (m_Cache)
-                Texture.DestroyImmediate(m_Cache);
+
+            CoreUtils.Destroy(m_Cache);
         }
 
         private void TransferToPanoCache(CommandBuffer cmd, int sliceIndex, Texture texture)
@@ -334,7 +336,7 @@ namespace UnityEngine.Experimental.Rendering
 
         // In case the texture content with which we update the cache is not the input texture, we need to provide the right update count.
         public void UpdateSlice(CommandBuffer cmd, int sliceIndex, Texture content, uint textureHash)
-                {
+        {
             // transfer new slice to sliceIndex from source texture
             SetSliceHash(sliceIndex, textureHash);
             TransferToSlice(cmd, sliceIndex, content);
@@ -349,7 +351,7 @@ namespace UnityEngine.Experimental.Rendering
         public void UpdateSlice(CommandBuffer cmd, int sliceIndex, Texture content)
         {
             UpdateSlice(cmd, sliceIndex, content, GetTextureHash(content));
-                }
+        }
 
         public int FetchSlice(CommandBuffer cmd, Texture texture, bool forceReinject=false)
         {
