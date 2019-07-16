@@ -1,14 +1,17 @@
 {
+    "dependencies": {
+        "com.unity.ugui": "1.0.0"
+    }, 
     "description": "Helper library for SRP that contains a new Shader Library, and utility functions that can be used to implement a custom SRP. This library is currently used by both the High Definition Render Pipeline and the Lightweight Render Pipeline.", 
     "displayName": "Core RP Library", 
     "name": "com.unity.render-pipelines.core", 
     "repoPackagePath": "com.unity.render-pipelines.core", 
     "repository": {
-        "revision": "a0539b6e84abf8cedea2d4372f495135a6c5cba8", 
+        "revision": "848314cd23748fd2273b715720cfea277842290f", 
         "type": "git", 
         "url": "ssh://git@github.com/Unity-Technologies/ScriptableRenderLoop.git"
     }, 
-    "unity": "2019.2", 
-    "unityRelease": "0b9", 
-    "version": "6.9.0"
+    "unity": "2019.3", 
+    "unityRelease": "0a10", 
+    "version": "7.0.0"
 }
