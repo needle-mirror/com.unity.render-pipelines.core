@@ -4,6 +4,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [7.2.0] - 2020-02-10
+
+### Fixed
+- Fix `WaveIsFirstLane()` to ignore helper lanes in fragment shaders on PS4.
+- Fixed a bug where Unity would crash if you tried to remove a Camera component from a GameObject using the Inspector window, while other components dependended on the Camera component.
+- Fixed errors due to the debug menu when enabling the new input system.
+- Fix LookDev FPS manipulation in view
+- Fix LookDev zoom being stuck when going near camera pivot position
+- Fix LookDev manipulation in view non responsive if directly using an HDRI
+- Fix LookDev behaviour when user delete the EnvironmentLibrary asset
+- Fix LookDev SunPosition button position
+- Fix LookDev EnvironmentLibrary tab when asset is deleted
+- Fix LookDev used Cubemap when asset is deleted
+
+### Changed
+- Updated macros to be compatible with the new shader preprocessor.
+
 ## [7.1.8] - 2020-01-20
 
 Version Updated
@@ -126,11 +143,11 @@ The version number for this package has increased due to a version update of a r
 ### Changed
 - Removed setting shader inclue path via old API, use package shader include paths
 
-## [3.3.0]
+## [3.3.0] - 2018-01-01
 
-## [3.2.0]
+## [3.2.0] - 2018-01-01
 
-## [3.1.0]
+## [3.1.0] - 2018-01-01
 
 ### Added
 - Add PCSS shadow filter
@@ -144,8 +161,3 @@ The version number for this package has increased due to a version update of a r
 ### Changed
 - Moved root files into folders for easier maintenance
 
-## [0.1.6] - 2018-xx-yy
-
-### Changelog starting
-
-Started Changelog
