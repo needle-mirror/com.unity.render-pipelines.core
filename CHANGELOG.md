@@ -4,10 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [7.2.1] - 2020-02-14
+## [7.3.1] - 2020-03-11
 
-Version Updated
-The version number for this package has increased due to a version update of a related graphics package.
+### Fixed
+- Fixed the definition of `rcp()` for GLES2.
 
 ## [7.2.0] - 2020-02-10
 
@@ -22,6 +22,8 @@ The version number for this package has increased due to a version update of a r
 - Fix LookDev SunPosition button position
 - Fix LookDev EnvironmentLibrary tab when asset is deleted
 - Fix LookDev used Cubemap when asset is deleted
+- Fix LookDev issue when adding a GameObject containing a Volume into the LookDev's view.
+- Fixed duplicated entry for com.unity.modules.xr in the runtime asmdef file
 
 ### Changed
 - Updated macros to be compatible with the new shader preprocessor.
