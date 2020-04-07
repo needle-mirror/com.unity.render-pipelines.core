@@ -4,16 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [8.0.1] - 2020-05-25
-
-### Fixed
-- Fix Changelog
-
-## [8.0.0] - 2020-05-25
+## [Unreleased]
 
 ### Added
 - Add rough version of ContextualMenuDispatcher to solve conflict amongst SRP.
 - Add api documentation for TextureCombiner.
+- Add tooltips in LookDev's toolbar.
 
 ### Fixed
 - Fixed compile errors for platforms with no VR support
@@ -33,6 +29,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix LookDev SunPosition button position
 - Fix LookDev EnvironmentLibrary tab when asset is deleted
 - Fix LookDev used Cubemap when asset is deleted
+- Fixed the definition of `rcp()` for GLES2.
+- Fixed copy/pasting of Volume Components when loading a new scene
+- Fix LookDev issue when adding a GameObject containing a Volume into the LookDev's view.
+- Fixed duplicated entry for com.unity.modules.xr in the runtime asmdef file
+- Fixed the texture curve being destroyed from another thread than main (case 1211754)
+- Fixed unreachable code in TextureXR.useTexArray
+- Fixed GC pressure caused by `VolumeParameter<T>.GetHashCode()`
+- Fixed issue when LookDev window is opened and the CoreRP Package is updated to a newer version.
+- Fix LookDev's camera button layout.
+- Fix LookDev's layout vanishing on domain reload.
+- Fixed issue with the shader TransformWorldToHClipDir function computing the wrong result.
 
 ### Changed
 - Restored usage of ENABLE_VR to fix compilation errors on some platforms.
@@ -130,4 +137,3 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Moved root files into folders for easier maintenance
-
