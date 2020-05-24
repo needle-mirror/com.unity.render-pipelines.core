@@ -4,14 +4,25 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [7.2.1] - 2020-02-14
-
-Version Updated
-The version number for this package has increased due to a version update of a related graphics package.
-
-## [7.2.0] - 2020-02-10
+## [8.0.1] - 2020-05-25
 
 ### Fixed
+- Fix Changelog
+
+## [8.0.0] - 2020-05-25
+
+### Added
+- Add rough version of ContextualMenuDispatcher to solve conflict amongst SRP.
+- Add api documentation for TextureCombiner.
+
+### Fixed
+- Fixed compile errors for platforms with no VR support
+- Replaced reference to Lightweight Render Pipeline by Universal Render Pipeline in the package description
+- Fixed LighProbes when using LookDev.
+- Fix LookDev minimal window size.
+- Fix object rotation at instentiation to keep the one in prefab or used in hierarchy.
+- Fixed shader compile errors when trying to use tessellation shaders with PlayStation VR on PS4.
+- Fixed shader compile errors about LODDitheringTransition not being supported in GLES2.
 - Fix `WaveIsFirstLane()` to ignore helper lanes in fragment shaders on PS4.
 - Fixed a bug where Unity would crash if you tried to remove a Camera component from a GameObject using the Inspector window, while other components dependended on the Camera component.
 - Fixed errors due to the debug menu when enabling the new input system.
@@ -24,60 +35,13 @@ The version number for this package has increased due to a version update of a r
 - Fix LookDev used Cubemap when asset is deleted
 
 ### Changed
-- Updated macros to be compatible with the new shader preprocessor.
-
-## [7.1.8] - 2020-01-20
-
-Version Updated
-The version number for this package has increased due to a version update of a related graphics package.
-
-## [7.1.7] - 2019-12-11
-
-### Fixed
-- Fixed shader compile errors about LODDitheringTransition not being supported in GLES2.
-
-### Changed
-- Enable RWTexture2D, RWTexture2DArray, RWTexture3D in gles 3.1
-
-## [7.1.6] - 2019-11-22
-
-### Changed
-- ResourceReloader will now add additional InvalidImport check while it cannot load due to AssetDatabase not available.
-- Replaced calls to deprecated PlayerSettings.virtualRealitySupported property.
-
-## [7.1.5] - 2019-11-15
-
-### Added
-- Add rough version of ContextualMenuDispatcher to solve conflict amongst SRP.
-- Add api documentation for TextureCombiner.
-
-## [7.1.4] - 2019-11-13
-
-### Changed
-- Set depthSlice to -1 by default on SetRenderTarget() to clear all slices of Texture2DArray by default.
-
-## [7.1.3] - 2019-11-04
-
-Version Updated
-The version number for this package has increased due to a version update of a related graphics package.
-
-## [7.1.2] - 2019-09-19
-
-Version Updated
-The version number for this package has increased due to a version update of a related graphics package.
-
-### Changed
 - Restored usage of ENABLE_VR to fix compilation errors on some platforms.
 - Only call SetDirty on an object when actually modifying it in SRP updater utility
-
-
-### Fixed
-- Fixed compile errors for platforms with no VR support
-- Replaced reference to Lightweight Render Pipeline by Universal Render Pipeline in the package description
-- Fixed LighProbes when using LookDev.
-- Fix LookDev minimal window size.
-- Fix object rotation at instentiation to keep the one in prefab or used in hierarchy.
-- Fixed shader compile errors when trying to use tessellation shaders with PlayStation VR on PS4.
+- Set depthSlice to -1 by default on SetRenderTarget() to clear all slices of Texture2DArray by default.
+- ResourceReloader will now add additional InvalidImport check while it cannot load due to AssetDatabase not available.
+- Replaced calls to deprecated PlayerSettings.virtualRealitySupported property.
+- Enable RWTexture2D, RWTexture2DArray, RWTexture3D in gles 3.1
+- Updated macros to be compatible with the new shader preprocessor.
 
 ## [7.1.1] - 2019-09-05
 
@@ -90,6 +54,7 @@ The version number for this package has increased due to a version update of a r
 - Removed `normalize` from `UnpackNormalRGB` to match `UnpackNormalAG`.
 - Fixed shadow routines compilation errors when "real" type is a typedef on "half".
 - Removed debug menu in non development build.
+
 
 ## [7.0.1] - 2019-07-25
 
