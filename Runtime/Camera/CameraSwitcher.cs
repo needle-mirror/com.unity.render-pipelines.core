@@ -5,7 +5,7 @@ namespace UnityEngine.Rendering
     /// <summary>
     /// Utility component allowing users to setup many different static camera and cycle through their positions using the Debug Window.
     /// </summary>
-    [HelpURL(Documentation.baseURL + Documentation.version + Documentation.subURL + "Camera-Switcher" + Documentation.endURL)]
+    [HelpURL(Documentation.baseURL + Documentation.releaseVersion + Documentation.subURL + "Camera-Switcher" + Documentation.endURL)]
     public class CameraSwitcher : MonoBehaviour
     {
         /// <summary>
@@ -89,7 +89,7 @@ namespace UnityEngine.Rendering
 
         void SetCameraIndex(int index)
         {
-            if (index > 0 || index < GetCameraCount())
+            if (index > 0 && index < GetCameraCount())
             {
                 m_CurrentCameraIndex = index;
 
