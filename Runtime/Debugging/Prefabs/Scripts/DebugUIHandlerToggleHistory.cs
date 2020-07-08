@@ -36,7 +36,7 @@ namespace UnityEngine.Rendering.UI
         /// <summary>
         /// Update the label.
         /// </summary>
-        internal protected override void UpdateValueLabel()
+        protected override void UpdateValueLabel()
         {
             base.UpdateValueLabel();
             DebugUI.HistoryBoolField field = m_Field as DebugUI.HistoryBoolField;

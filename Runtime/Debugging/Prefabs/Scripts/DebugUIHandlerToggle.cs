@@ -59,7 +59,7 @@ namespace UnityEngine.Rendering.UI
         /// <summary>
         /// Update the label.
         /// </summary>
-        internal protected virtual void UpdateValueLabel()
+        protected virtual void UpdateValueLabel()
         {
             if (valueToggle != null)
                 valueToggle.isOn = m_Field.GetValue();

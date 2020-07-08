@@ -22,7 +22,7 @@ namespace UnityEngine.Rendering
         public DynamicArray()
         {
             m_Array = new T[32];
-            size = 0;
+            size = 32;
         }
 
         /// <summary>
