@@ -91,6 +91,7 @@
 
 #define real2x2 half2x2
 #define real2x3 half2x3
+#define real2x4 half2x4
 #define real3x2 half3x2
 #define real3x3 half3x3
 #define real3x4 half3x4
@@ -126,6 +127,7 @@
 
 #define real2x2 float2x2
 #define real2x3 float2x3
+#define real2x4 float2x4
 #define real3x2 float3x2
 #define real3x3 float3x3
 #define real3x4 float3x4
@@ -182,6 +184,10 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Macros.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Random.hlsl"
 
+#ifdef SHADER_API_XBOXONE // TODO: to move in .nda package in 21.1
+#define PLATFORM_SUPPORTS_PRIMITIVE_ID_IN_PIXEL_SHADER
+#endif
+
 // ----------------------------------------------------------------------------
 // Common intrinsic (general implementation of intrinsic available on some platform)
 // ----------------------------------------------------------------------------
@@ -197,8 +203,8 @@
 #define LODDitheringTransition ERROR_ON_UNSUPPORTED_FUNCTION(LODDitheringTransition)
 #endif
 
-// On everything but GCN consoles we error on cross-lane operations
-#ifndef PLATFORM_SUPPORTS_WAVE_INTRINSICS
+// On everything but GCN consoles or DXC compiled shaders we error on cross-lane operations
+#if !defined(PLATFORM_SUPPORTS_WAVE_INTRINSICS) && !defined(UNITY_COMPILER_DXC)
 #define WaveActiveAllTrue ERROR_ON_UNSUPPORTED_FUNCTION(WaveActiveAllTrue)
 #define WaveActiveAnyTrue ERROR_ON_UNSUPPORTED_FUNCTION(WaveActiveAnyTrue)
 #define WaveGetLaneIndex ERROR_ON_UNSUPPORTED_FUNCTION(WaveGetLaneIndex)
@@ -211,6 +217,12 @@
 #define WaveActiveBitAnd ERROR_ON_UNSUPPORTED_FUNCTION(WaveActiveBitAnd)
 #define WaveActiveBitOr ERROR_ON_UNSUPPORTED_FUNCTION(WaveActiveBitOr)
 #define WaveGetLaneCount ERROR_ON_UNSUPPORTED_FUNCTION(WaveGetLaneCount)
+#endif
+
+#if defined(PLATFORM_SUPPORTS_WAVE_INTRINSICS)
+// Helper macro to compute lane swizzle offset starting from andMask, orMask and xorMask.
+// IMPORTANT, to guarantee compatibility with all platforms, the masks need to be constant literals (constants at compile time)
+#define LANE_SWIZZLE_OFFSET(andMask, orMask, xorMask)  (andMask | (orMask << 5) | (xorMask << 10))
 #endif
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonDeprecated.hlsl"
@@ -294,8 +306,13 @@ void ToggleBit(inout uint data, uint offset)
 
 TEMPLATE_3_REAL(Avg3, a, b, c, return (a + b + c) * 0.33333333)
 
+// Important! Quad functions only valid in pixel shaders!
+    float2 GetQuadOffset(int2 screenPos)
+    {
+        return float2(float(screenPos.x & 1) * 2.0 - 1.0, float(screenPos.y & 1) * 2.0 - 1.0);
+    }
+
 #ifndef INTRINSIC_QUAD_SHUFFLE
-    // Important! Only valid in pixel shaders!
     float QuadReadAcrossX(float value, int2 screenPos)
     {
         return value - (ddx_fine(value) * (float(screenPos.x & 1) * 2.0 - 1.0));
@@ -310,11 +327,41 @@ TEMPLATE_3_REAL(Avg3, a, b, c, return (a + b + c) * 0.33333333)
     {
         float dX = ddx_fine(value);
         float dY = ddy_fine(value);
-        float2 quadDir = float2(float(screenPos.x & 1) * 2.0 - 1.0, float(screenPos.y & 1) * 2.0 - 1.0);
+        float2 quadDir = GetQuadOffset(screenPos);
         float X = value - (dX * quadDir.x);
         return X - (ddy_fine(value) * quadDir.y);
     }
 #endif
+
+    float3 QuadReadFloat3AcrossX(float3 val, int2 positionSS)
+    {
+        return float3(QuadReadAcrossX(val.x, positionSS), QuadReadAcrossX(val.y, positionSS), QuadReadAcrossX(val.z, positionSS));
+    }
+
+    float4 QuadReadFloat4AcrossX(float4 val, int2 positionSS)
+    {
+        return float4(QuadReadAcrossX(val.x, positionSS), QuadReadAcrossX(val.y, positionSS), QuadReadAcrossX(val.z, positionSS), QuadReadAcrossX(val.w, positionSS));
+    }
+
+    float3 QuadReadFloat3AcrossY(float3 val, int2 positionSS)
+    {
+        return float3(QuadReadAcrossY(val.x, positionSS), QuadReadAcrossY(val.y, positionSS), QuadReadAcrossY(val.z, positionSS));
+    }
+
+    float4 QuadReadFloat4AcrossY(float4 val, int2 positionSS)
+    {
+        return float4(QuadReadAcrossY(val.x, positionSS), QuadReadAcrossY(val.y, positionSS), QuadReadAcrossY(val.z, positionSS), QuadReadAcrossY(val.w, positionSS));
+    }
+
+    float3 QuadReadFloat3AcrossDiagonal(float3 val, int2 positionSS)
+    {
+        return float3(QuadReadAcrossDiagonal(val.x, positionSS), QuadReadAcrossDiagonal(val.y, positionSS), QuadReadAcrossDiagonal(val.z, positionSS));
+    }
+
+    float4 QuadReadFloat4AcrossDiagonal(float4 val, int2 positionSS)
+    {
+        return float4(QuadReadAcrossDiagonal(val.x, positionSS), QuadReadAcrossDiagonal(val.y, positionSS), QuadReadAcrossDiagonal(val.z, positionSS), QuadReadAcrossDiagonal(val.w, positionSS));
+    }
 
 TEMPLATE_SWAP(Swap) // Define a Swap(a, b) function for all types
 
@@ -649,36 +696,37 @@ TEMPLATE_3_FLT(RangeRemap, min, max, t, return saturate((t - min) / (max - min))
 // Texture utilities
 // ----------------------------------------------------------------------------
 
-float ComputeTextureLOD(float2 uvdx, float2 uvdy, float2 scale)
+float ComputeTextureLOD(float2 uvdx, float2 uvdy, float2 scale, float bias = 0.0)
 {
     float2 ddx_ = scale * uvdx;
     float2 ddy_ = scale * uvdy;
-    float d = max(dot(ddx_, ddx_), dot(ddy_, ddy_));
+    float  d    = max(dot(ddx_, ddx_), dot(ddy_, ddy_));
 
-    return max(0.5 * log2(d), 0.0);
+    return max(0.5 * log2(d) - bias, 0.0);
 }
 
-float ComputeTextureLOD(float2 uv)
+float ComputeTextureLOD(float2 uv, float bias = 0.0)
 {
     float2 ddx_ = ddx(uv);
     float2 ddy_ = ddy(uv);
 
-    return ComputeTextureLOD(ddx_, ddy_, 1.0);
+    return ComputeTextureLOD(ddx_, ddy_, 1.0, bias);
 }
 
 // x contains width, w contains height
-float ComputeTextureLOD(float2 uv, float2 texelSize)
+float ComputeTextureLOD(float2 uv, float2 texelSize, float bias = 0.0)
 {
     uv *= texelSize;
 
-    return ComputeTextureLOD(uv);
+    return ComputeTextureLOD(uv, bias);
 }
 
 // LOD clamp is optional and happens outside the function.
-float ComputeTextureLOD(float3 duvw_dx, float3 duvw_dy, float3 duvw_dz, float scale)
+float ComputeTextureLOD(float3 duvw_dx, float3 duvw_dy, float3 duvw_dz, float scale, float bias = 0.0)
 {
     float d = Max3(dot(duvw_dx, duvw_dx), dot(duvw_dy, duvw_dy), dot(duvw_dz, duvw_dz));
-    return 0.5 * log2(d * (scale * scale));
+
+    return max(0.5f * log2(d * (scale * scale)) - bias, 0.0);
 }
 
 
@@ -708,6 +756,48 @@ uint GetMipCount(Texture2D tex)
 // ----------------------------------------------------------------------------
 // Texture format sampling
 // ----------------------------------------------------------------------------
+
+// DXC no longer supports DX9-style HLSL syntax for sampler2D, tex2D and the like.
+// These are emulated for backwards compatibilit using our own small structs and functions which manually combine samplers and textures.
+#if defined(UNITY_COMPILER_DXC) && !defined(DXC_SAMPLER_COMPATIBILITY)
+#define DXC_SAMPLER_COMPATIBILITY 1
+struct sampler1D            { Texture1D t; SamplerState s; };
+struct sampler2D            { Texture2D t; SamplerState s; };
+struct sampler3D            { Texture3D t; SamplerState s; };
+struct samplerCUBE          { TextureCube t; SamplerState s; };
+
+float4 tex1D(sampler1D x, float v)              { return x.t.Sample(x.s, v); }
+float4 tex2D(sampler2D x, float2 v)             { return x.t.Sample(x.s, v); }
+float4 tex3D(sampler3D x, float3 v)             { return x.t.Sample(x.s, v); }
+float4 texCUBE(samplerCUBE x, float3 v)         { return x.t.Sample(x.s, v); }
+
+float4 tex1Dbias(sampler1D x, in float4 t)              { return x.t.SampleBias(x.s, t.x, t.w); }
+float4 tex2Dbias(sampler2D x, in float4 t)              { return x.t.SampleBias(x.s, t.xy, t.w); }
+float4 tex3Dbias(sampler3D x, in float4 t)              { return x.t.SampleBias(x.s, t.xyz, t.w); }
+float4 texCUBEbias(samplerCUBE x, in float4 t)          { return x.t.SampleBias(x.s, t.xyz, t.w); }
+
+float4 tex1Dlod(sampler1D x, in float4 t)           { return x.t.SampleLevel(x.s, t.x, t.w); }
+float4 tex2Dlod(sampler2D x, in float4 t)           { return x.t.SampleLevel(x.s, t.xy, t.w); }
+float4 tex3Dlod(sampler3D x, in float4 t)           { return x.t.SampleLevel(x.s, t.xyz, t.w); }
+float4 texCUBElod(samplerCUBE x, in float4 t)       { return x.t.SampleLevel(x.s, t.xyz, t.w); }
+
+float4 tex1Dgrad(sampler1D x, float t, float dx, float dy)              { return x.t.SampleGrad(x.s, t, dx, dy); }
+float4 tex2Dgrad(sampler2D x, float2 t, float2 dx, float2 dy)           { return x.t.SampleGrad(x.s, t, dx, dy); }
+float4 tex3Dgrad(sampler3D x, float3 t, float3 dx, float3 dy)           { return x.t.SampleGrad(x.s, t, dx, dy); }
+float4 texCUBEgrad(samplerCUBE x, float3 t, float3 dx, float3 dy)       { return x.t.SampleGrad(x.s, t, dx, dy); }
+
+float4 tex1D(sampler1D x, float t, float dx, float dy)              { return x.t.SampleGrad(x.s, t, dx, dy); }
+float4 tex2D(sampler2D x, float2 t, float2 dx, float2 dy)           { return x.t.SampleGrad(x.s, t, dx, dy); }
+float4 tex3D(sampler3D x, float3 t, float3 dx, float3 dy)           { return x.t.SampleGrad(x.s, t, dx, dy); }
+float4 texCUBE(samplerCUBE x, float3 t, float3 dx, float3 dy)       { return x.t.SampleGrad(x.s, t, dx, dy); }
+
+float4 tex1Dproj(sampler1D s, in float2 t)              { return tex1D(s, t.x / t.y); }
+float4 tex1Dproj(sampler1D s, in float4 t)              { return tex1D(s, t.x / t.w); }
+float4 tex2Dproj(sampler2D s, in float3 t)              { return tex2D(s, t.xy / t.z); }
+float4 tex2Dproj(sampler2D s, in float4 t)              { return tex2D(s, t.xy / t.w); }
+float4 tex3Dproj(sampler3D s, in float4 t)              { return tex3D(s, t.xyz / t.w); }
+float4 texCUBEproj(samplerCUBE s, in float4 t)          { return texCUBE(s, t.xyz / t.w); }
+#endif
 
 float2 DirectionToLatLongCoordinate(float3 unDir)
 {
@@ -933,6 +1023,12 @@ float3 ComputeWorldSpacePosition(float2 positionNDC, float deviceDepth, float4x4
     return hpositionWS.xyz / hpositionWS.w;
 }
 
+float3 ComputeWorldSpacePosition(float4 positionCS, float4x4 invViewProjMatrix)
+{
+    float4 hpositionWS = mul(invViewProjMatrix, positionCS);
+    return hpositionWS.xyz / hpositionWS.w;
+}
+
 // ----------------------------------------------------------------------------
 // PositionInputs
 // ----------------------------------------------------------------------------
@@ -972,6 +1068,16 @@ PositionInputs GetPositionInput(float2 positionSS, float2 invScreenSize, uint2 t
 PositionInputs GetPositionInput(float2 positionSS, float2 invScreenSize)
 {
     return GetPositionInput(positionSS, invScreenSize, uint2(0, 0));
+}
+
+// For Raytracing only
+// This function does not initialize deviceDepth and linearDepth
+PositionInputs GetPositionInput(float2 positionSS, float2 invScreenSize, float3 positionWS)
+{
+    PositionInputs posInput = GetPositionInput(positionSS, invScreenSize, uint2(0, 0));
+    posInput.positionWS = positionWS;
+
+    return posInput;
 }
 
 // From forward
@@ -1069,8 +1175,15 @@ bool HasFlag(uint bitfield, uint flag)
 // Normalize that account for vectors with zero length
 real3 SafeNormalize(float3 inVec)
 {
-    float dp3 = max(FLT_MIN, dot(inVec, inVec));
+    real dp3 = max(FLT_MIN, dot(inVec, inVec));
     return inVec * rsqrt(dp3);
+}
+
+// Checks if a vector is normalized
+bool IsNormalized(float3 inVec)
+{
+    real l = length(inVec);
+    return length(l) < 1.0001 && length(l) > 0.9999;
 }
 
 // Division which returns 1 for (inf/inf) and (0/0).
@@ -1165,11 +1278,22 @@ void LODDitheringTransition(uint2 fadeMaskSeed, float ditherFactor)
 // while on other APIs is in the red channel. Note that on some platform, always using the green channel might work, but is not guaranteed.
 uint GetStencilValue(uint2 stencilBufferVal)
 {
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE)  
+#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE)
     return stencilBufferVal.y;
 #else
     return stencilBufferVal.x;
 #endif
-} 
+}
+
+// Sharpens the alpha of a texture to the width of a single pixel
+// Used for alpha to coverage
+// source: https://medium.com/@bgolus/anti-aliased-alpha-test-the-esoteric-alpha-to-coverage-8b177335ae4f
+float SharpenAlpha(float alpha, float alphaClipTreshold)
+{
+    return saturate((alpha - alphaClipTreshold) / max(fwidth(alpha), 0.0001) + 0.5);
+}
+
+// These clamping function to max of floating point 16 bit are use to prevent INF in code in case of extreme value
+TEMPLATE_1_REAL(ClampToFloat16Max, value, return min(value, HALF_MAX))
 
 #endif // UNITY_COMMON_INCLUDED

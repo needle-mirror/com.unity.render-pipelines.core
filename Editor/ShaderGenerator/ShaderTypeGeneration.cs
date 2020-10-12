@@ -156,7 +156,7 @@ namespace UnityEditor.Rendering
 
         class DebugFieldInfo
         {
-            public DebugFieldInfo(string defineName, string fieldName, Type fieldType, bool isDirection, bool isSRGB, string displayName = "")
+            public DebugFieldInfo(string defineName, string fieldName, Type fieldType, bool isDirection, bool isSRGB, bool checkIsNormalized, string displayName = "")
             {
                 this.defineName = defineName;
                 this.fieldName = fieldName;
@@ -164,6 +164,7 @@ namespace UnityEditor.Rendering
                 this.isDirection = isDirection;
                 this.isSRGB = isSRGB;
                 this.displayName = displayName;
+                this.checkIsNormalized = checkIsNormalized;
             }
 
             public string defineName;
@@ -172,6 +173,7 @@ namespace UnityEditor.Rendering
             public Type fieldType;
             public bool isDirection;
             public bool isSRGB;
+            public bool checkIsNormalized;
         }
 
         class PackedFieldInfo
@@ -407,7 +409,15 @@ namespace UnityEditor.Rendering
 
             shaderText += "// Generated from " + type.FullName + "\n";
             shaderText += "// PackingRules = " + attr.packingRules.ToString() + "\n";
-            if (!attr.omitStructDeclaration)
+
+            if (attr.generateCBuffer)
+            {
+                if (attr.constantRegister != -1)
+                    shaderText += "GLOBAL_CBUFFER_START(" + type.Name + ", b" + attr.constantRegister + ")\n";
+                else
+                    shaderText += "CBUFFER_START(" + type.Name + ")\n";
+            }
+            else if (!attr.omitStructDeclaration)
             {
                 shaderText += "struct " + type.Name + "\n";
                 shaderText += "{\n";
@@ -418,7 +428,11 @@ namespace UnityEditor.Rendering
                 shaderText += "    " + shaderFieldInfo.ToString() + "\n";
             }
 
-            if (!attr.omitStructDeclaration)
+            if (attr.generateCBuffer)
+            {
+                shaderText += "CBUFFER_END\n";
+            }
+            else if (!attr.omitStructDeclaration)
             {
                 shaderText += "};\n";
             }
@@ -573,7 +587,15 @@ namespace UnityEditor.Rendering
                 {
                     if (debugField.isDirection)
                     {
-                        shaderText += "            result = " + lowerStructName + "." + debugField.fieldName + " * 0.5 + 0.5;\n";
+                        if (debugField.checkIsNormalized)
+                        {
+                            shaderText += "            result = IsNormalized(" + lowerStructName + "." + debugField.fieldName +")? " + lowerStructName + "." + debugField.fieldName + " * 0.5 + 0.5 : float3(1.0, 0.0, 0.0);\n";
+
+                        }
+                        else
+                        {
+                            shaderText += "            result = " + lowerStructName + "." + debugField.fieldName + " * 0.5 + 0.5;\n";
+                        }
                     }
                     else
                     {
@@ -764,6 +786,10 @@ namespace UnityEditor.Rendering
                         {
                             funcSignature = "float4 " + funcSignature;
                         }
+                        else if (packedInfo.fieldType == typeof(Vector2Int))
+                        {
+                            funcSignature = "int2 " + funcSignature;
+                        }
                         funcBody += "return (" + sourceName + "." + packedInfo.fieldName + ");";
                         break;
                     default:
@@ -849,6 +875,10 @@ namespace UnityEditor.Rendering
                         else if (packedInfo.fieldType == typeof(Vector4))
                         {
                             funcSignature += "float4 " + newParamName + ", inout " + type.Name + " " + sourceName + ")";
+                        }
+                        else if (packedInfo.fieldType == typeof(Vector2Int))
+                        {
+                            funcSignature += "int2 " + newParamName + ", inout " + type.Name + " " + sourceName + ")";
                         }
                         funcBody += sourceName + "." + packedInfo.fieldName + " = " + newParamName + ";";
                         break;
@@ -939,6 +969,10 @@ namespace UnityEditor.Rendering
                         {
                             funcSignature += "float4 " + newParamName + ", inout " + type.Name + " " + sourceName + ")";
                         }
+                        else if (packedInfo.fieldType == typeof(Vector2Int))
+                        {
+                            funcSignature += "int2 " + newParamName + ", inout " + type.Name + " " + sourceName + ")";
+                        }
                         funcBody += sourceName + "." + packedInfo.fieldName + " = " + newParamName + ";";
                         break;
                     default:
@@ -1015,6 +1049,16 @@ namespace UnityEditor.Rendering
                     var arrayInfos = (field.GetCustomAttributes(typeof(HLSLArray), false) as HLSLArray[]);
                     if (arrayInfos.Length != 0)
                     {
+                        // For constant buffers, every element of the array needs to be aligned to a Vector4
+                        if (attr.generateCBuffer &&
+                            arrayInfos[0].elementType != typeof(Vector4) &&
+                            arrayInfos[0].elementType != typeof(ShaderGenUInt4) &&
+                            arrayInfos[0].elementType != typeof(Matrix4x4))
+                        {
+                            Error("Invalid HLSLArray target: '" + field.FieldType + "'" + ", only Vector4, Matrix4x4 and ShaderGenUInt4 are supported for arrays in constant buffers.");
+                            return false;
+                        }
+
                         arraySize = arrayInfos[0].arraySize;
                         fieldType = arrayInfos[0].elementType;
                     }
@@ -1053,6 +1097,7 @@ namespace UnityEditor.Rendering
 
                     bool isDirection = false;
                     bool sRGBDisplay = false;
+                    bool checkIsNormalized = false;
 
                     // Check if the display name have been override by the users
                     if (Attribute.IsDefined(field, typeof(SurfaceDataAttributes)))
@@ -1068,6 +1113,7 @@ namespace UnityEditor.Rendering
                         }
                         isDirection = propertyAttr[0].isDirection;
                         sRGBDisplay = propertyAttr[0].sRGBDisplay;
+                        checkIsNormalized = propertyAttr[0].checkIsNormalized;
                     }
 
 
@@ -1083,7 +1129,7 @@ namespace UnityEditor.Rendering
                             string defineName = ("DEBUGVIEW_" + className + "_" + name).ToUpper();
                             m_Statics[defineName] = Convert.ToString(attr.paramDefinesStart + debugCounter++);
 
-                            m_DebugFields.Add(new DebugFieldInfo(defineName, field.Name, fieldType, isDirection, sRGBDisplay));
+                            m_DebugFields.Add(new DebugFieldInfo(defineName, field.Name, fieldType, isDirection, sRGBDisplay, checkIsNormalized));
                         }
                     }
                 }
@@ -1093,12 +1139,15 @@ namespace UnityEditor.Rendering
                     // Define only once, it is safe to assume that colors and directions are not packed with something else
                     bool isDirection = false;
                     bool sRGBDisplay = false;
+                    bool checkIsNormalized = false;
 
                     if (Attribute.IsDefined(field, typeof(PackingAttribute)))
                     {
                         var packingAttributes = (PackingAttribute[])field.GetCustomAttributes(typeof(PackingAttribute), false);
                         isDirection = packingAttributes[0].isDirection;
                         sRGBDisplay = packingAttributes[0].sRGBDisplay;
+                        checkIsNormalized = packingAttributes[0].checkIsNormalized;
+
                         // Generate debug names
                         string className = type.FullName.Substring(type.FullName.LastIndexOf((".")) + 1); // ClassName include nested class
                         className = className.Replace('+', '_'); // FullName is Class+NestedClass replace by Class_NestedClass
@@ -1128,7 +1177,7 @@ namespace UnityEditor.Rendering
                                     typeForDebug = fieldType;
                                 }
 
-                                m_DebugFields.Add(new DebugFieldInfo(defineName, field.Name, typeForDebug, isDirection, sRGBDisplay, packAttr.displayNames[0]));
+                                m_DebugFields.Add(new DebugFieldInfo(defineName, field.Name, typeForDebug, isDirection, sRGBDisplay, checkIsNormalized, packAttr.displayNames[0]));
                             }
 
                             m_PackedFieldsInfos.Add(new PackedFieldInfo(packAttr, fieldType, field.Name));
@@ -1171,6 +1220,10 @@ namespace UnityEditor.Rendering
                         EmitPrimitiveType(floatPrecision, 3, arraySize, field.Name, "", m_ShaderFields);
                     else if (fieldType == typeof(Vector4))
                         EmitPrimitiveType(floatPrecision, 4, arraySize, field.Name, "", m_ShaderFields);
+                    else if (fieldType == typeof(Vector2Int))
+                        EmitPrimitiveType(PrimitiveType.Int, 2, arraySize, field.Name, "", m_ShaderFields);
+                    else if (fieldType == typeof(ShaderGenUInt4))
+                        EmitPrimitiveType(PrimitiveType.UInt, 4, arraySize, field.Name, "", m_ShaderFields);
                     else if (fieldType == typeof(Matrix4x4))
                         EmitMatrixType(floatPrecision, 4, 4, arraySize, field.Name, "", m_ShaderFields);
                     else if (!ExtractComplex(field, m_ShaderFields))
