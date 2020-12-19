@@ -1,10 +1,6 @@
 #ifndef UNITY_COMMON_INCLUDED
 #define UNITY_COMMON_INCLUDED
 
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (disable : 3205) // conversion of larger type to smaller
-#endif
-
 // Convention:
 
 // Unity is Y up and left handed in world space
@@ -87,20 +83,6 @@
 #define REAL_IS_HALF 0
 #endif // Do we have half?
 
-#if REAL_IS_HALF || (defined(UNITY_UNIFIED_SHADER_PRECISION_MODEL) && (defined(UNITY_COMPILER_HLSL) || defined(UNITY_COMPILER_DXC)))
-#define half min16float
-#define half2 min16float2
-#define half3 min16float3
-#define half4 min16float4
-#define half2x2 min16float2x2
-#define half2x3 min16float2x3
-#define half3x2 min16float3x2
-#define half3x3 min16float3x3
-#define half3x4 min16float3x4
-#define half4x3 min16float4x3
-#define half4x4 min16float4x4
-#endif
-
 #if REAL_IS_HALF
 #define real half
 #define real2 half2
@@ -115,6 +97,19 @@
 #define real3x4 half3x4
 #define real4x3 half4x3
 #define real4x4 half4x4
+
+#define half min16float
+#define half2 min16float2
+#define half3 min16float3
+#define half4 min16float4
+
+#define half2x2 min16float2x2
+#define half2x3 min16float2x3
+#define half3x2 min16float3x2
+#define half3x3 min16float3x3
+#define half3x4 min16float3x4
+#define half4x3 min16float4x3
+#define half4x4 min16float4x4
 
 #define REAL_MIN HALF_MIN
 #define REAL_MAX HALF_MAX
@@ -163,14 +158,10 @@
 #endif
 
 // Include language header
-#if defined (SHADER_API_GAMECORE)
-#include "Packages/com.unity.render-pipelines.gamecore/ShaderLibrary/API/GameCore.hlsl"
-#elif defined(SHADER_API_XBOXONE)
+#if defined(SHADER_API_XBOXONE)
 #include "Packages/com.unity.render-pipelines.xboxone/ShaderLibrary/API/XBoxOne.hlsl"
-#elif defined(SHADER_API_PS4)
+#elif defined(SHADER_API_PSSL)
 #include "Packages/com.unity.render-pipelines.ps4/ShaderLibrary/API/PSSL.hlsl"
-#elif defined(SHADER_API_PS5)
-#include "Packages/com.unity.render-pipelines.ps5/ShaderLibrary/API/PSSL.hlsl"
 #elif defined(SHADER_API_D3D11)
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/API/D3D11.hlsl"
 #elif defined(SHADER_API_METAL)
@@ -571,7 +562,7 @@ TEMPLATE_2_REAL(PositivePow, base, power, return pow(abs(base), power))
 // -As a replacement for pow(0,y) where y >= 1, the result of SafePositivePow(x,y) should be close enough to 0.
 // -For cases where we substitute for pow(0,y) where 0 < y < 1, SafePositivePow(x,y) will quickly reach 1 as y -> 0, while
 // normally pow(0,y) would give 0 instead of 1 for all 0 < y.
-// eg: if we #define FLT_EPS  5.960464478e-8 (for fp32), 
+// eg: if we #define FLT_EPS  5.960464478e-8 (for fp32),
 // SafePositivePow(0, 0.1)   = 0.1894646
 // SafePositivePow(0, 0.01)  = 0.8467453
 // SafePositivePow(0, 0.001) = 0.9835021
@@ -784,7 +775,8 @@ uint GetMipCount(Texture2D tex)
 #if defined(SHADER_API_D3D11) || defined(SHADER_API_D3D12) || defined(SHADER_API_D3D11_9X) || defined(SHADER_API_XBOXONE) || defined(SHADER_API_PSSL)
     #define MIP_COUNT_SUPPORTED 1
 #endif
-#if (defined(SHADER_API_OPENGL) || defined(SHADER_API_VULKAN)) && !defined(SHADER_STAGE_COMPUTE)
+    // TODO: Bug workaround, switch defines GLCORE when it shouldn't
+#if ((defined(SHADER_API_GLCORE) && !defined(SHADER_API_SWITCH)) || defined(SHADER_API_VULKAN)) && !defined(SHADER_STAGE_COMPUTE)
     // OpenGL only supports textureSize for width, height, depth
     // textureQueryLevels (GL_ARB_texture_query_levels) needs OpenGL 4.3 or above and doesn't compile in compute shaders
     // tex.GetDimensions converted to textureQueryLevels
@@ -1327,7 +1319,7 @@ void LODDitheringTransition(uint2 fadeMaskSeed, float ditherFactor)
 // while on other APIs is in the red channel. Note that on some platform, always using the green channel might work, but is not guaranteed.
 uint GetStencilValue(uint2 stencilBufferVal)
 {
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE) || defined(SHADER_API_GAMECORE)
+#if defined(SHADER_API_D3D11) || defined(SHADER_API_XBOXONE)
     return stencilBufferVal.y;
 #else
     return stencilBufferVal.x;
@@ -1344,9 +1336,5 @@ float SharpenAlpha(float alpha, float alphaClipTreshold)
 
 // These clamping function to max of floating point 16 bit are use to prevent INF in code in case of extreme value
 TEMPLATE_1_REAL(ClampToFloat16Max, value, return min(value, HALF_MAX))
-
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (enable : 3205) // conversion of larger type to smaller
-#endif
 
 #endif // UNITY_COMMON_INCLUDED

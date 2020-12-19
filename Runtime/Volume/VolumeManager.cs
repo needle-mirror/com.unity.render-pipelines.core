@@ -30,20 +30,7 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The current list of all available types that derive from <see cref="VolumeComponent"/>.
         /// </summary>
-        [Obsolete("Please use baseComponentTypeArray instead.")]
-        public IEnumerable<Type> baseComponentTypes
-        {
-            get
-            {
-                return baseComponentTypeArray;
-            }
-            private set
-            {
-                baseComponentTypeArray = value.ToArray();
-            }
-        }
-
-        public Type[] baseComponentTypeArray { get; private set; }
+        public IEnumerable<Type> baseComponentTypes { get; private set; }
 
         // Max amount of layers available in Unity
         const int k_MaxLayerCount = 32;
@@ -88,7 +75,7 @@ namespace UnityEngine.Rendering
         public VolumeStack CreateStack()
         {
             var stack = new VolumeStack();
-            stack.Reload(baseComponentTypeArray);
+            stack.Reload(baseComponentTypes);
             return stack;
         }
 
@@ -108,12 +95,12 @@ namespace UnityEngine.Rendering
             m_ComponentsDefaultState.Clear();
 
             // Grab all the component types we can find
-            baseComponentTypeArray = CoreUtils.GetAllTypesDerivedFrom<VolumeComponent>()
-                .Where(t => !t.IsAbstract).ToArray();
+            baseComponentTypes = CoreUtils.GetAllTypesDerivedFrom<VolumeComponent>()
+                .Where(t => !t.IsAbstract);
 
             // Keep an instance of each type to be used in a virtual lowest priority global volume
             // so that we have a default state to fallback to when exiting volumes
-            foreach (var type in baseComponentTypeArray)
+            foreach (var type in baseComponentTypes)
             {
                 var inst = (VolumeComponent)ScriptableObject.CreateInstance(type);
                 m_ComponentsDefaultState.Add(inst);
@@ -238,7 +225,7 @@ namespace UnityEngine.Rendering
 
                 for (int i = 0; i < count; i++)
                 {
-                    if(target.parameters[i] != null)
+                    if (target.parameters[i] != null)
                     {
                         target.parameters[i].overrideState = false;
                         target.parameters[i].SetValue(component.parameters[i]);
@@ -273,7 +260,7 @@ namespace UnityEngine.Rendering
 
             if (components == null)
             {
-                stack.Reload(baseComponentTypeArray);
+                stack.Reload(baseComponentTypes);
                 return;
             }
 
@@ -281,7 +268,7 @@ namespace UnityEngine.Rendering
             {
                 if (kvp.Key == null || kvp.Value == null)
                 {
-                    stack.Reload(baseComponentTypeArray);
+                    stack.Reload(baseComponentTypes);
                     return;
                 }
             }

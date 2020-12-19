@@ -1,10 +1,6 @@
 #ifndef UNITY_PACKING_INCLUDED
 #define UNITY_PACKING_INCLUDED
 
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (disable : 3205) // conversion of larger type to smaller
-#endif
-
 //-----------------------------------------------------------------------------
 // Normal packing
 //-----------------------------------------------------------------------------
@@ -552,7 +548,7 @@ float3 PackFloat2To888(float2 f)
 // Unpack 2 float of 12bit packed into a 888
 float2 Unpack888ToFloat2(float3 x)
 {
-    uint3 i = (uint3)(x * 255.5); // +0.5 to fix precision error on iOS 
+    uint3 i = (uint3)(x * 255.5); // +0.5 to fix precision error on iOS
     // 8 bit in lo, 4 bit in hi
     uint hi = i.z >> 4;
     uint lo = i.z & 15;
@@ -571,7 +567,7 @@ float PackFloat2To8(float2 f)
     return x_y_expanded / 255.0;
 
     // above 4 lines equivalent to:
-    //return (16.0 * f.x + f.y) / 17.0; 
+    //return (16.0 * f.x + f.y) / 17.0;
 }
 
 // Unpack 2 float values from the [0, 1] range, packed in an 8 bits float from the [0, 1] range
@@ -584,9 +580,5 @@ float2 Unpack8ToFloat2(float f)
     float y = y_expanded / 15.0;
     return float2(x, y);
 }
-
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (enable : 3205) // conversion of larger type to smaller
-#endif
 
 #endif // UNITY_PACKING_INCLUDED

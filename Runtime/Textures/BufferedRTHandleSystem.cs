@@ -91,7 +91,7 @@ namespace UnityEngine.Rendering
             int bufferId,
             Func<RTHandleSystem, int, RTHandle> allocator,
             int bufferCount
-            )
+        )
         {
             var buffer = new RTHandle[bufferCount];
             m_RTHandles.Add(bufferId, buffer);
@@ -142,18 +142,6 @@ namespace UnityEngine.Rendering
         public void ResetReferenceSize(int width, int height)
         {
             m_RTHandleSystem.ResetReferenceSize(width, height);
-        }
-
-        /// <summary>
-        /// Queries the number of RT handle buffers allocated for a buffer ID.
-        /// </summary>
-        /// <param name="bufferId">The buffer ID to query.</param>
-        public int GetNumFramesAllocated(int bufferId)
-        {
-            if (!m_RTHandles.ContainsKey(bufferId))
-                return 0;
-
-            return m_RTHandles[bufferId].Length;
         }
 
         void Swap()

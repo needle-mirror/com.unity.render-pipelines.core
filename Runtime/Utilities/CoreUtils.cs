@@ -225,6 +225,7 @@ namespace UnityEngine.Rendering
             cmd.SetRenderTarget(buffer, miplevel, cubemapFace, depthSlice);
             ClearRenderTarget(cmd, clearFlag, clearColor);
         }
+
         /// <summary>
         /// Set the current render texture.
         /// </summary>
@@ -578,7 +579,7 @@ namespace UnityEngine.Rendering
         /// <param name="msaaSamples">Number of MSAA samples.</param>
         /// <returns>Generated names bassed on the provided parameters.</returns>
         public static string GetRenderTargetAutoName(int width, int height, int depth, RenderTextureFormat format, string name, bool mips = false, bool enableMSAA = false, MSAASamples msaaSamples = MSAASamples.None)
-            => GetRenderTargetAutoName(width, height, depth, format.ToString(), TextureDimension.None, name, mips, enableMSAA, msaaSamples, dynamicRes: false);
+            => GetRenderTargetAutoName(width, height, depth, format.ToString(), name, mips, enableMSAA, msaaSamples);
 
         /// <summary>
         /// Generate a name based on render texture parameters.
@@ -593,26 +594,9 @@ namespace UnityEngine.Rendering
         /// <param name="msaaSamples">Number of MSAA samples.</param>
         /// <returns>Generated names bassed on the provided parameters.</returns>
         public static string GetRenderTargetAutoName(int width, int height, int depth, GraphicsFormat format, string name, bool mips = false, bool enableMSAA = false, MSAASamples msaaSamples = MSAASamples.None)
-            => GetRenderTargetAutoName(width, height, depth, format.ToString(), TextureDimension.None, name, mips, enableMSAA, msaaSamples, dynamicRes: false);
+            => GetRenderTargetAutoName(width, height, depth, format.ToString(), name, mips, enableMSAA, msaaSamples);
 
-        /// <summary>
-        /// Generate a name based on render texture parameters.
-        /// </summary>
-        /// <param name="width">With of the texture.</param>
-        /// <param name="height">Height of the texture.</param>
-        /// <param name="depth">Depth of the texture.</param>
-        /// <param name="format">Graphics format of the render texture.</param>
-        /// <param name="dim">Dimension of the texture.</param>
-        /// <param name="name">Base name of the texture.</param>
-        /// <param name="mips">True if the texture has mip maps.</param>
-        /// <param name="enableMSAA">True if the texture is multisampled.</param>
-        /// <param name="msaaSamples">Number of MSAA samples.</param>
-        /// <param name="dynamicRes">True if the texture uses dynamic resolution.</param>
-        /// <returns>Generated names bassed on the provided parameters.</returns>
-        public static string GetRenderTargetAutoName(int width, int height, int depth, GraphicsFormat format, TextureDimension dim, string name, bool mips = false, bool enableMSAA = false, MSAASamples msaaSamples = MSAASamples.None, bool dynamicRes = false)
-            => GetRenderTargetAutoName(width, height, depth, format.ToString(), dim, name, mips, enableMSAA, msaaSamples, dynamicRes);
-
-        static string GetRenderTargetAutoName(int width, int height, int depth, string format, TextureDimension dim, string name, bool mips, bool enableMSAA, MSAASamples msaaSamples, bool dynamicRes)
+        static string GetRenderTargetAutoName(int width, int height, int depth, string format, string name, bool mips = false, bool enableMSAA = false, MSAASamples msaaSamples = MSAASamples.None)
         {
             string result = string.Format("{0}_{1}x{2}", name, width, height);
 
@@ -624,14 +608,8 @@ namespace UnityEngine.Rendering
 
             result = string.Format("{0}_{1}", result, format);
 
-            if (dim != TextureDimension.None)
-                result = string.Format("{0}_{1}", result, dim);
-
             if (enableMSAA)
                 result = string.Format("{0}_{1}", result, msaaSamples.ToString());
-
-            if (dynamicRes)
-                result = string.Format("{0}_{1}", result, "dynamic");
 
             return result;
         }
@@ -925,7 +903,7 @@ namespace UnityEngine.Rendering
             if (obj != null)
             {
 #if UNITY_EDITOR
-                if (Application.isPlaying && !UnityEditor.EditorApplication.isPaused)
+                if (Application.isPlaying)
                     UnityObject.Destroy(obj);
                 else
                     UnityObject.DestroyImmediate(obj);
@@ -1184,6 +1162,7 @@ namespace UnityEngine.Rendering
             var lambda = System.Linq.Expressions.Expression.Lambda<Func<List<UnityEditor.MaterialEditor>>>(fieldExpression);
             materialEditors = lambda.Compile();
         }
+
 #endif
 
         /// <summary>

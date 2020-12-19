@@ -46,7 +46,7 @@ namespace UnityEditor.Rendering.LookDev
         int computeIndex(ViewIndex index, ShadowCompositionPass passIndex)
             => (int)index * k_PassPerViewCount + (int)(passIndex);
         int computeIndex(CompositionFinal index)
-            => (k_PassPerViewCount-1) + (int)(index) * k_PassPerViewCount;
+            => (k_PassPerViewCount - 1) + (int)(index) * k_PassPerViewCount;
 
         void UpdateSize(int index, Rect rect, bool pixelPerfect, Camera renderingCamera, string renderDocName = "LookDevRT")
         {
@@ -92,7 +92,6 @@ namespace UnityEditor.Rendering.LookDev
             UpdateSize(computeIndex(index, ShadowCompositionPass.MainView), rect, pixelPerfect, renderingCamera, $"LookDevRT-{index}-MainView");
             UpdateSize(computeIndex(index, ShadowCompositionPass.ShadowMask), rect, pixelPerfect, renderingCamera, $"LookDevRT-{index}-ShadowMask");
         }
-
 
         public void UpdateSize(Rect rect, CompositionFinal index, bool pixelPerfect, Camera renderingCamera)
             => UpdateSize(computeIndex(index), rect, pixelPerfect, renderingCamera, $"LookDevRT-Final-{index}");
@@ -151,15 +150,17 @@ namespace UnityEditor.Rendering.LookDev
 
         public Compositer(
             IViewDisplayer displayer,
+            Context contexts,
             IDataProvider dataProvider,
             StageCache stages)
         {
             m_Displayer = displayer;
+            m_Contexts = contexts;
 
             m_RenderDataCache = new RenderingData[2]
             {
-                new RenderingData() { stage = stages[ViewIndex.First] },
-                new RenderingData() { stage = stages[ViewIndex.Second] }
+                new RenderingData() { stage = stages[ViewIndex.First], updater = contexts.GetViewContent(ViewIndex.First).camera },
+                new RenderingData() { stage = stages[ViewIndex.Second], updater = contexts.GetViewContent(ViewIndex.Second).camera }
             };
 
             m_Displayer.OnRenderDocAcquisitionTriggered += RenderDocAcquisitionRequested;
@@ -182,6 +183,7 @@ namespace UnityEditor.Rendering.LookDev
             m_Displayer.OnRenderDocAcquisitionTriggered -= RenderDocAcquisitionRequested;
             m_Displayer.OnUpdateRequested -= Render;
         }
+
         public void Dispose()
         {
             if (m_Disposed)
@@ -190,16 +192,11 @@ namespace UnityEditor.Rendering.LookDev
             CleanUp();
             GC.SuppressFinalize(this);
         }
+
         ~Compositer() => CleanUp();
 
         public void Render()
         {
-            // This can happen when entering/leaving playmode.
-            if (LookDev.dataProvider == null)
-                return;
-
-            m_Contexts = LookDev.currentContext;
-
             //TODO: make integration EditorWindow agnostic!
             if (UnityEditorInternal.RenderDoc.IsLoaded() && UnityEditorInternal.RenderDoc.IsSupported() && m_RenderDocAcquisitionRequested)
                 UnityEditorInternal.RenderDoc.BeginCaptureRenderDoc(m_Displayer as EditorWindow);
@@ -239,13 +236,11 @@ namespace UnityEditor.Rendering.LookDev
 
             m_RenderTextures.UpdateSize(renderingData.viewPort, index, m_Renderer.pixelPerfect, renderingData.stage.camera);
 
-            int debugMode = view.debug.viewMode;
+            int debugMode = m_Contexts.GetViewContent(index).debug.viewMode;
             if (debugMode != -1)
                 LookDev.dataProvider.UpdateDebugMode(debugMode);
 
             renderingData.output = m_RenderTextures[index, ShadowCompositionPass.MainView];
-            renderingData.updater = view.camera;
-
             m_Renderer.BeginRendering(renderingData, LookDev.dataProvider);
             m_Renderer.Acquire(renderingData);
 
