@@ -284,6 +284,7 @@ namespace UnityEditor.Rendering.LookDev
         const string secondStageName = "LookDevSecondView";
 
         Stage[] m_Stages;
+        Context m_Contexts;
         IDataProvider m_CurrentDataProvider;
 
         public Stage this[ViewIndex index]
@@ -291,8 +292,9 @@ namespace UnityEditor.Rendering.LookDev
 
         public bool initialized { get; private set; }
 
-        public StageCache(IDataProvider dataProvider)
+        public StageCache(IDataProvider dataProvider, Context contexts)
         {
+            m_Contexts = contexts;
             m_Stages = new Stage[2]
             {
                 InitStage(ViewIndex.First, dataProvider),
@@ -331,7 +333,7 @@ namespace UnityEditor.Rendering.LookDev
             Stage stage = this[index];
             stage.Clear();
 
-            var viewContent = LookDev.currentContext.GetViewContent(index);
+            var viewContent = m_Contexts.GetViewContent(index);
             if (viewContent == null)
             {
                 viewContent.viewedInstanceInPreview = null;
@@ -345,7 +347,7 @@ namespace UnityEditor.Rendering.LookDev
         public void UpdateSceneLighting(ViewIndex index, IDataProvider provider)
         {
             Stage stage = this[index];
-            Environment environment = LookDev.currentContext.GetViewContent(index).environment;
+            Environment environment = m_Contexts.GetViewContent(index).environment;
             provider.UpdateSky(stage.camera,
                 environment == null ? default : environment.sky,
                     stage.runtimeInterface);

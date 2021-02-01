@@ -1,5 +1,3 @@
-using UnityEngine.EventSystems;
-
 namespace UnityEngine.Rendering
 {
     class DebugUpdater : MonoBehaviour
@@ -12,42 +10,18 @@ namespace UnityEngine.Rendering
 
             var go = new GameObject { name = "[Debug Updater]" };
             go.AddComponent<DebugUpdater>();
-
-            var es = GameObject.FindObjectOfType<EventSystem>();
-            if (es == null)
-            {
-                go.AddComponent<EventSystem>();
-                go.AddComponent<StandaloneInputModule>();
-            }
             DontDestroyOnLoad(go);
         }
 
         void Update()
         {
-            DebugManager debugManager = DebugManager.instance;
+            DebugManager.instance.UpdateActions();
 
-            debugManager.UpdateActions();
+            if (DebugManager.instance.GetAction(DebugAction.EnableDebugMenu) != 0.0f)
+                DebugManager.instance.displayRuntimeUI = !DebugManager.instance.displayRuntimeUI;
 
-            if (debugManager.GetAction(DebugAction.EnableDebugMenu) != 0.0f)
-            {
-                debugManager.displayRuntimeUI = !debugManager.displayRuntimeUI;
-            }
-            else
-            {
-                if (Input.touchCount == 3)
-                {
-                    foreach (var touch in Input.touches)
-                    {
-                        if (touch.phase == TouchPhase.Began)
-                            debugManager.displayRuntimeUI = !debugManager.displayRuntimeUI;
-                    }
-                }
-            }
-
-            if (debugManager.displayRuntimeUI && debugManager.GetAction(DebugAction.ResetAll) != 0.0f)
-            {
-                debugManager.Reset();
-            }
+            if (DebugManager.instance.displayRuntimeUI && DebugManager.instance.GetAction(DebugAction.ResetAll) != 0.0f)
+                DebugManager.instance.Reset();
         }
     }
 }

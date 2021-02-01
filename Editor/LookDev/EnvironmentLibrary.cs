@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 using System.IO;
-using UnityEditor;
 using UnityEditor.UIElements;
 
 namespace UnityEditor.Rendering.LookDev
@@ -12,7 +11,7 @@ namespace UnityEditor.Rendering.LookDev
     /// <summary>
     /// Class containing a collection of Environment
     /// </summary>
-    [CoreRPHelpURL("Environment-Library")]
+    [HelpURL(Documentation.baseURLHDRP + Documentation.version + Documentation.subURL + "Environment-Library" + Documentation.endURL)]
     public class EnvironmentLibrary : ScriptableObject
     {
         [field: SerializeField]
@@ -118,15 +117,14 @@ namespace UnityEditor.Rendering.LookDev
     [CustomEditor(typeof(EnvironmentLibrary))]
     class EnvironmentLibraryEditor : Editor
     {
-        VisualElement m_Root;
-        VisualElement m_OpenButton;
+        VisualElement root;
 
         public sealed override VisualElement CreateInspectorGUI()
         {
             var library = target as EnvironmentLibrary;
-            m_Root = new VisualElement();
+            root = new VisualElement();
 
-            m_OpenButton = new Button(() =>
+            Button open = new Button(() =>
             {
                 if (!LookDev.open)
                     LookDev.Open();
@@ -134,22 +132,11 @@ namespace UnityEditor.Rendering.LookDev
                 LookDev.currentEnvironmentDisplayer.Repaint();
             })
             {
-                text = "Open in Look Dev window"
+                text = "Open in LookDev window"
             };
-            m_OpenButton.SetEnabled(LookDev.supported);
 
-            m_Root.Add(m_OpenButton);
-            return m_Root;
-        }
-
-        void OnEnable() => EditorApplication.update += Update;
-        void OnDisable() => EditorApplication.update -= Update;
-
-        void Update()
-        {
-            // Current SRP can be changed at any time so we need to do this at every update.
-            if (m_OpenButton != null)
-                m_OpenButton.SetEnabled(LookDev.supported);
+            root.Add(open);
+            return root;
         }
 
         // Don't use ImGUI
@@ -177,7 +164,7 @@ namespace UnityEditor.Rendering.LookDev
             m_Field = null;
         }
 
-        [MenuItem("Assets/Create/Rendering/Environment Library (Look Dev)", priority = CoreUtils.Priorities.assetsCreateRenderingMenuPriority)]
+        [MenuItem("Assets/Create/LookDev/Environment Library", priority = 2000)]
         static void Create()
         {
             var icon = EditorGUIUtility.FindTexture("ScriptableObject Icon");

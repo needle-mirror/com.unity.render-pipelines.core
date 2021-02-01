@@ -30,17 +30,7 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The current list of all available types that derive from <see cref="VolumeComponent"/>.
         /// </summary>
-        [Obsolete("Please use baseComponentTypeArray instead.")]
-        public IEnumerable<Type> baseComponentTypes
-        {
-            get => baseComponentTypeArray;
-            private set => baseComponentTypeArray = value.ToArray();
-        }
-
-        /// <summary>
-        /// The current list of all available types that derive from <see cref="VolumeComponent"/>.
-        /// </summary>
-        public Type[] baseComponentTypeArray { get; private set; }
+        public IEnumerable<Type> baseComponentTypes { get; private set; }
 
         // Max amount of layers available in Unity
         const int k_MaxLayerCount = 32;
@@ -85,7 +75,7 @@ namespace UnityEngine.Rendering
         public VolumeStack CreateStack()
         {
             var stack = new VolumeStack();
-            stack.Reload(baseComponentTypeArray);
+            stack.Reload(baseComponentTypes);
             return stack;
         }
 
@@ -105,13 +95,13 @@ namespace UnityEngine.Rendering
             m_ComponentsDefaultState.Clear();
 
             // Grab all the component types we can find
-            baseComponentTypeArray = CoreUtils.GetAllTypesDerivedFrom<VolumeComponent>()
-                .Where(t => !t.IsAbstract).ToArray();
+            baseComponentTypes = CoreUtils.GetAllTypesDerivedFrom<VolumeComponent>()
+                .Where(t => !t.IsAbstract);
 
             var flags = System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
             // Keep an instance of each type to be used in a virtual lowest priority global volume
             // so that we have a default state to fallback to when exiting volumes
-            foreach (var type in baseComponentTypeArray)
+            foreach (var type in baseComponentTypes)
             {
                 type.GetMethod("Init", flags)?.Invoke(null, null);
                 var inst = (VolumeComponent)ScriptableObject.CreateInstance(type);
@@ -272,7 +262,7 @@ namespace UnityEngine.Rendering
 
             if (components == null)
             {
-                stack.Reload(baseComponentTypeArray);
+                stack.Reload(baseComponentTypes);
                 return;
             }
 
@@ -280,7 +270,7 @@ namespace UnityEngine.Rendering
             {
                 if (kvp.Key == null || kvp.Value == null)
                 {
-                    stack.Reload(baseComponentTypeArray);
+                    stack.Reload(baseComponentTypes);
                     return;
                 }
             }

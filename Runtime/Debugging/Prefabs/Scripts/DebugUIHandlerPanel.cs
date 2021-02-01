@@ -13,8 +13,6 @@ namespace UnityEngine.Rendering.UI
         public ScrollRect scrollRect;
         /// <summary>Viewport of the panel.</summary>
         public RectTransform viewport;
-        /// <summary>Associated canvas.</summary>
-        public DebugUIHandlerCanvas Canvas;
 
         RectTransform m_ScrollTransform;
         RectTransform m_ContentTransform;
@@ -32,28 +30,12 @@ namespace UnityEngine.Rendering.UI
         internal void SetPanel(DebugUI.Panel panel)
         {
             m_Panel = panel;
-            nameLabel.text = panel.displayName;
+            nameLabel.text = "< " + panel.displayName + " >";
         }
 
         internal DebugUI.Panel GetPanel()
         {
             return m_Panel;
-        }
-
-        /// <summary>
-        /// Select next panel on the canvas.
-        /// </summary>
-        public void SelectNextItem()
-        {
-            Canvas.SelectNextPanel();
-        }
-
-        /// <summary>
-        /// Select previous panel on the canvas.
-        /// </summary>
-        public void SelectPreviousItem()
-        {
-            Canvas.SelectPreviousPanel();
         }
 
         // TODO: Jumps around with foldouts and the likes, fix me
