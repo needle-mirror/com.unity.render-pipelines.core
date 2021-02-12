@@ -1,10 +1,6 @@
 #ifndef __ACES__
 #define __ACES__
 
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (disable : 3205) // conversion of larger type to smaller
-#endif
-
 /**
  * https://github.com/ampas/aces-dev
  *
@@ -630,7 +626,7 @@ half3 xyY_2_XYZ(half3 xyY)
 
 static const half DIM_SURROUND_GAMMA = 0.9811;
 
-float3 darkSurround_to_dimSurround(float3 linearCV)
+half3 darkSurround_to_dimSurround(half3 linearCV)
 {
     half3 XYZ = mul(AP1_2_XYZ_MAT, linearCV);
 
@@ -1319,9 +1315,5 @@ half3 ODT_P3DCI_48nits(half3 oces)
 
     return outputCV;
 }
-
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (enable : 3205) // conversion of larger type to smaller
-#endif
 
 #endif // __ACES__

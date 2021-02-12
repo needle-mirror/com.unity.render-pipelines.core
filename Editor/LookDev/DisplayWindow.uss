@@ -17,7 +17,6 @@
 
 #viewContainer
 {
-    min-width: 50px;
     flex-shrink: 0;
 }
 

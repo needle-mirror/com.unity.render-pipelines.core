@@ -4,28 +4,26 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [11.0.0] - 2020-10-21
+## [12.0.0] - 2021-01-11
+
+Version Updated
+The version number for this package has increased due to a version update of a related graphics package.
 
 ### Added
 - Support for the PlayStation 5 platform has been added.
-- Support for the XboxSeries platform has been added.
-- New API in DynamicResolutionHandler to handle multicamera rendering for hardware mode. Changing cameras and resetting scaling per camera should be safe.
-- New API functions with no side effects in DynamicResolutionHandler, to retrieve resolved drs scale and to apply DRS on a size.
-- Added SpeedTree8MaterialUpgrader, which provides utilities for upgrading and importing SpeedTree 8 assets to scriptable render pipelines.
+
+## [11.0.0] - 2020-10-21
 
 ### Fixed
 - Fixed the default background color for previews to use the original color.
-- Fixed a bug in FreeCamera which would only provide a speed boost for the first frame when pressing the Shfit key.
-- Fixed spacing between property fields on the Volume Component Editors.
-- Fixed ALL/NONE to maintain the state on the Volume Component Editors.
-- Fixed the selection of the Additional properties from ALL/NONE when the option "Show additional properties" is disabled
+
+### Fixed
 - Fixed ACES tonemaping for Nintendo Switch by forcing some shader color conversion functions to full float precision.
-- Fixed missing warning UI about Projector component being unsupported (case 1300327).
-- Fixed the display name of a Volume Parameter when is defined the attribute InspectorName
-- Fixed ACES tonemaping on mobile platforms by forcing some shader color conversion functions to full float precision.
-- Fix crash on VolumeComponentWithQualityEditor when the current Pipeline is not HDRP
-- Calculating correct rtHandleScale by considering the possible pixel rounding when DRS is on
-- Fixed ACES filter artefact due to half floating point error on some mobile platforms.
+- Fixed a bug in FreeCamera which would only provide a speed boost for the first frame when pressing the Shfit key.
+
+### Added
+- New View Lighting Tool, a component which allow to setup light in the camera space
+- New function in GeometryTools.hlsl to calculate triangle edge and full triangle culling.
 
 ## [10.2.0] - 2020-10-19
 
@@ -41,6 +39,7 @@ The version number for this package has increased due to a version update of a r
 ### Fixed
 - Fixed the scene view to scale correctly when hardware dynamic resolution is enabled (case 1158661)
 - Fixed game view artifacts on resizing when hardware dynamic resolution was enabled
+- Fixed issue that caused `UNITY_REVERSED_Z` and `UNITY_UV_STARTS_AT_TOP` being defined in platforms that don't support it.
 
 ### Changed
 - LookDev menu item entry is now disabled if the current pipeline does not support it.

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using UnityEditor.AnimatedValues;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering;
@@ -76,26 +75,6 @@ namespace UnityEditor.Rendering
     /// <seealso cref="VolumeComponentEditorAttribute"/>
     public class VolumeComponentEditor
     {
-        class Styles
-        {
-            public static GUIContent overrideSettingText { get; } = EditorGUIUtility.TrTextContent("", "Override this setting for this volume.");
-            public static GUIContent allText { get; } = EditorGUIUtility.TrTextContent("ALL", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need.");
-            public static GUIContent noneText { get; } = EditorGUIUtility.TrTextContent("NONE", "Toggle all overrides off.");
-
-            public static string toggleAllText { get; } = L10n.Tr("Toggle All");
-        }
-
-        Vector2? m_OverrideToggleSize;
-        internal Vector2 overrideToggleSize
-        {
-            get
-            {
-                if (!m_OverrideToggleSize.HasValue)
-                    m_OverrideToggleSize = CoreEditorStyles.smallTickbox.CalcSize(Styles.overrideSettingText);
-                return m_OverrideToggleSize.Value;
-            }
-        }
-
         /// <summary>
         /// Specifies the <see cref="VolumeComponent"/> this editor is drawing.
         /// </summary>
@@ -120,11 +99,10 @@ namespace UnityEditor.Rendering
 
         SerializedProperty m_AdvancedMode;
 
-        List<VolumeParameter> m_VolumeNotAdditionalParameters;
         /// <summary>
         /// Override this property if your editor makes use of the "More Options" feature.
         /// </summary>
-        public virtual bool hasAdvancedMode => target.parameters.Count != m_VolumeNotAdditionalParameters.Count;
+        public virtual bool hasAdvancedMode => false;
 
         /// <summary>
         /// Checks if the editor currently has the "More Options" feature toggled on.
@@ -198,16 +176,7 @@ namespace UnityEditor.Rendering
             serializedObject = new SerializedObject(target);
             activeProperty = serializedObject.FindProperty("active");
             m_AdvancedMode = serializedObject.FindProperty("m_AdvancedMode");
-
-            InitParameters();
-
             OnEnable();
-        }
-
-        void InitParameters()
-        {
-            m_VolumeNotAdditionalParameters = new List<VolumeParameter>();
-            VolumeComponent.FindParameters(target, m_VolumeNotAdditionalParameters, field => field.GetCustomAttribute<AdditionalPropertyAttribute>() == null);
         }
 
         void GetFields(object o, List<(FieldInfo, SerializedProperty)> infos, SerializedProperty prop = null)
@@ -295,7 +264,7 @@ namespace UnityEditor.Rendering
             // Display every field as-is
             foreach (var parameter in m_Parameters)
             {
-                if (!string.IsNullOrEmpty(parameter.displayName.text))
+                if (parameter.displayName.text != "")
                     PropertyField(parameter.param, parameter.displayName);
                 else
                     PropertyField(parameter.param);
@@ -312,68 +281,21 @@ namespace UnityEditor.Rendering
             return target.displayName == "" ? ObjectNames.NicifyVariableName(target.GetType().Name) : target.displayName;
         }
 
-        void AddToogleState(GUIContent content, bool state)
-        {
-            bool allOverridesSameState = AreOverridesTo(state);
-            if (GUILayout.Toggle(allOverridesSameState, content, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)) && !allOverridesSameState)
-                SetOverridesTo(state);
-        }
-
         void TopRowFields()
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                AddToogleState(Styles.allText, true);
-                AddToogleState(Styles.noneText, false);
-            }
-        }
+                if (GUILayout.Button(EditorGUIUtility.TrTextContent("All", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need."), CoreEditorStyles.miniLabelButton, GUILayout.Width(17f), GUILayout.ExpandWidth(false)))
+                    SetAllOverridesTo(true);
 
-        /// <summary>
-        /// Checks if all the visible parameters have the given state
-        /// </summary>
-        /// <param name="state">The state to check</param>
-        internal bool AreOverridesTo(bool state)
-        {
-            if (hasAdvancedMode && isInAdvancedMode)
-                return AreAllOverridesTo(state);
-
-            for (int i = 0; i < m_VolumeNotAdditionalParameters.Count; ++i)
-            {
-                if (m_VolumeNotAdditionalParameters[i].overrideState != state)
-                    return false;
+                if (GUILayout.Button(EditorGUIUtility.TrTextContent("None", "Toggle all overrides off."), CoreEditorStyles.miniLabelButton, GUILayout.Width(32f), GUILayout.ExpandWidth(false)))
+                    SetAllOverridesTo(false);
             }
-            return true;
-        }
-
-        /// <summary>
-        /// Sets the given state to all the visible parameters
-        /// </summary>
-        /// <param name="state">The state to check</param>
-        internal void SetOverridesTo(bool state)
-        {
-            if (hasAdvancedMode && isInAdvancedMode)
-                SetAllOverridesTo(state);
-            else
-            {
-                Undo.RecordObject(target, Styles.toggleAllText);
-                target.SetOverridesTo(m_VolumeNotAdditionalParameters, state);
-                serializedObject.Update();
-            }
-        }
-
-        internal bool AreAllOverridesTo(bool state)
-        {
-            for (int i = 0; i < target.parameters.Count; ++i)
-            {
-                if (target.parameters[i].overrideState != state)
-                    return false;
-            }
-            return true;
         }
 
         internal void SetAllOverridesTo(bool state)
         {
-            Undo.RecordObject(target, Styles.toggleAllText);
+            Undo.RecordObject(target, "Toggle All");
             target.SetAllOverridesTo(state);
             serializedObject.Update();
         }
@@ -402,42 +324,6 @@ namespace UnityEditor.Rendering
         }
 
         /// <summary>
-        /// Handles unity built-in decorators (Space, Header, Tooltips, ...) from <see cref="SerializedDataParameter"/> attributes
-        /// </summary>
-        /// <param name="property">The property to obtain the attributes and handle the decorators</param>
-        /// <param name="title">A custom label and/or tooltip that might be updated by <see cref="TooltipAttribute"/> and/or by <see cref="InspectorNameAttribute"/></param>
-        void HandleDecorators(SerializedDataParameter property, GUIContent title)
-        {
-            foreach (var attr in property.attributes)
-            {
-                if (!(attr is PropertyAttribute))
-                    continue;
-
-                switch (attr)
-                {
-                    case SpaceAttribute spaceAttribute:
-                        EditorGUILayout.GetControlRect(false, spaceAttribute.height);
-                        break;
-                    case HeaderAttribute headerAttribute:
-                    {
-                        var rect = EditorGUI.IndentedRect(EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight));
-                        EditorGUI.LabelField(rect, headerAttribute.header, EditorStyles.miniLabel);
-                        break;
-                    }
-                    case TooltipAttribute tooltipAttribute:
-                    {
-                        if (string.IsNullOrEmpty(title.tooltip))
-                            title.tooltip = tooltipAttribute.tooltip;
-                        break;
-                    }
-                    case InspectorNameAttribute inspectorNameAttribute:
-                        title.text = inspectorNameAttribute.displayName;
-                        break;
-                }
-            }
-        }
-
-        /// <summary>
         /// Draws a given <see cref="SerializedDataParameter"/> in the editor using a custom label
         /// and tooltip.
         /// </summary>
@@ -445,7 +331,29 @@ namespace UnityEditor.Rendering
         /// <param name="title">A custom label and/or tooltip.</param>
         protected void PropertyField(SerializedDataParameter property, GUIContent title)
         {
-            HandleDecorators(property, title);
+            // Handle unity built-in decorators (Space, Header, Tooltip etc)
+            foreach (var attr in property.attributes)
+            {
+                if (attr is PropertyAttribute)
+                {
+                    if (attr is SpaceAttribute)
+                    {
+                        EditorGUILayout.GetControlRect(false, (attr as SpaceAttribute).height);
+                    }
+                    else if (attr is HeaderAttribute)
+                    {
+                        var rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+                        rect.y += 0f;
+                        rect = EditorGUI.IndentedRect(rect);
+                        EditorGUI.LabelField(rect, (attr as HeaderAttribute).header, EditorStyles.miniLabel);
+                    }
+                    else if (attr is TooltipAttribute)
+                    {
+                        if (string.IsNullOrEmpty(title.tooltip))
+                            title.tooltip = (attr as TooltipAttribute).tooltip;
+                    }
+                }
+            }
 
             // Custom parameter drawer
             VolumeParameterDrawer drawer;
@@ -515,15 +423,9 @@ namespace UnityEditor.Rendering
         /// <param name="property">The property to draw the override checkbox for</param>
         protected void DrawOverrideCheckbox(SerializedDataParameter property)
         {
-            // Create a rect the height + vspacing of the property that is being overriden
-            float height = EditorGUI.GetPropertyHeight(property.value) + EditorGUIUtility.standardVerticalSpacing;
-            var overrideRect = GUILayoutUtility.GetRect(Styles.allText, CoreEditorStyles.miniLabelButton, GUILayout.Height(height), GUILayout.ExpandWidth(false));
-
-            // also center vertically the checkbox
-            overrideRect.yMin += height * 0.5f - overrideToggleSize.y * 0.5f;
-            overrideRect.xMin += overrideToggleSize.x * 0.5f;
-
-            property.overrideState.boolValue = GUI.Toggle(overrideRect, property.overrideState.boolValue, Styles.overrideSettingText, CoreEditorStyles.smallTickbox);
+            var overrideRect = GUILayoutUtility.GetRect(17f, 17f, GUILayout.ExpandWidth(false));
+            overrideRect.yMin += 4f;
+            property.overrideState.boolValue = GUI.Toggle(overrideRect, property.overrideState.boolValue, EditorGUIUtility.TrTextContent("", "Override this setting for this volume."), CoreEditorStyles.smallTickbox);
         }
     }
 }
