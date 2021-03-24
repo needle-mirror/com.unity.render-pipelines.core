@@ -26,7 +26,7 @@ namespace UnityEditor.Rendering
 
         class PathNode : IComparable<PathNode>
         {
-            public List<PathNode> nodes = new List<PathNode>();
+            public List<PathNode> nodes =  new List<PathNode>();
             public string name;
             public Type type;
 
@@ -51,7 +51,7 @@ namespace UnityEditor.Rendering
         {
             tree.Add(new GroupElement(0, "Volume Overrides"));
 
-            var types = VolumeManager.instance.baseComponentTypeArray;
+            var types = VolumeManager.instance.baseComponentTypes;
             var rootNode = new PathNode();
 
             foreach (var t in types)

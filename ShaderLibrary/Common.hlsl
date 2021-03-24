@@ -1,10 +1,6 @@
 #ifndef UNITY_COMMON_INCLUDED
 #define UNITY_COMMON_INCLUDED
 
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (disable : 3205) // conversion of larger type to smaller
-#endif
-
 // Convention:
 
 // Unity is Y up and left handed in world space
@@ -539,6 +535,11 @@ real FastATan(real x)
 {
     real t0 = FastATanPos(abs(x));
     return (x < 0.0) ? -t0 : t0;
+}
+
+real FastAtan2(real y, real x)
+{
+    return FastATan(y / x) + (y >= 0.0 ? PI : -PI) * (x < 0.0);
 }
 
 #if (SHADER_TARGET >= 45)
@@ -1224,7 +1225,7 @@ bool HasFlag(uint bitfield, uint flag)
 // Normalize that account for vectors with zero length
 real3 SafeNormalize(float3 inVec)
 {
-    real dp3 = max(FLT_MIN, dot(inVec, inVec));
+    real dp3 = max(REAL_MIN, dot(inVec, inVec));
     return inVec * rsqrt(dp3);
 }
 
@@ -1344,9 +1345,5 @@ float SharpenAlpha(float alpha, float alphaClipTreshold)
 
 // These clamping function to max of floating point 16 bit are use to prevent INF in code in case of extreme value
 TEMPLATE_1_REAL(ClampToFloat16Max, value, return min(value, HALF_MAX))
-
-#if SHADER_API_MOBILE || SHADER_API_GLES || SHADER_API_GLES3
-#pragma warning (enable : 3205) // conversion of larger type to smaller
-#endif
 
 #endif // UNITY_COMMON_INCLUDED

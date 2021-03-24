@@ -40,21 +40,69 @@ namespace UnityEngine.Rendering
             new Vector3(0.0f, 1.0f, 0.0f),
         };
 
+        /// <summary>
+        /// Class to store the menu sections
+        /// </summary>
+        public static class Sections
+        {
+            /// <summary>Menu section 1</summary>
+            public const int section1 = 10000;
+            /// <summary>Menu section 2</summary>
+            public const int section2 = 20000;
+            /// <summary>Menu section 3</summary>
+            public const int section3 = 30000;
+            /// <summary>Menu section 4</summary>
+            public const int section4 = 40000;
+            /// <summary>Menu section 5</summary>
+            public const int section5 = 50000;
+            /// <summary>Menu section 6</summary>
+            public const int section6 = 60000;
+            /// <summary>Menu section 7</summary>
+            public const int section7 = 70000;
+            /// <summary>Menu section 8</summary>
+            public const int section8 = 80000;
+        }
+
+        /// <summary>
+        /// Class to store the menu priorities on each top level menu
+        /// </summary>
+        public static class Priorities
+        {
+            /// <summary>Assets > Create > Shader priority</summary>
+            public const int assetsCreateShaderMenuPriority = 83;
+            /// <summary>Assets > Create > Rendering priority</summary>
+            public const int assetsCreateRenderingMenuPriority = 308;
+            /// <summary>Edit Menu base priority</summary>
+            public const int editMenuPriority = 320;
+            /// <summary>Game Object Menu priority</summary>
+            public const int gameObjectMenuPriority = 10;
+        }
+
+        const string obsoletePriorityMessage = "Use CoreUtils.Priorities instead";
+
         /// <summary>Edit Menu priority 1</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int editMenuPriority1 = 320;
         /// <summary>Edit Menu priority 2</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int editMenuPriority2 = 331;
         /// <summary>Edit Menu priority 3</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int editMenuPriority3 = 342;
         /// <summary>Edit Menu priority 4</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int editMenuPriority4 = 353;
         /// <summary>Asset Create Menu priority 1</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int assetCreateMenuPriority1 = 230;
         /// <summary>Asset Create Menu priority 2</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int assetCreateMenuPriority2 = 241;
         /// <summary>Asset Create Menu priority 3</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int assetCreateMenuPriority3 = 300;
         /// <summary>Game Object Menu priority</summary>
+        [Obsolete(obsoletePriorityMessage, false)]
         public const int gameObjectMenuPriority = 10;
 
         static Cubemap m_BlackCubeTexture;
@@ -67,7 +115,7 @@ namespace UnityEngine.Rendering
             {
                 if (m_BlackCubeTexture == null)
                 {
-                    m_BlackCubeTexture = new Cubemap(1, TextureFormat.ARGB32, false);
+                    m_BlackCubeTexture = new Cubemap(1, GraphicsFormat.R8G8B8A8_SRGB, TextureCreationFlags.None);
                     for (int i = 0; i < 6; ++i)
                         m_BlackCubeTexture.SetPixel((CubemapFace)i, 0, 0, Color.black);
                     m_BlackCubeTexture.Apply();
@@ -87,7 +135,7 @@ namespace UnityEngine.Rendering
             {
                 if (m_MagentaCubeTexture == null)
                 {
-                    m_MagentaCubeTexture = new Cubemap(1, TextureFormat.ARGB32, false);
+                    m_MagentaCubeTexture = new Cubemap(1, GraphicsFormat.R8G8B8A8_SRGB, TextureCreationFlags.None);
                     for (int i = 0; i < 6; ++i)
                         m_MagentaCubeTexture.SetPixel((CubemapFace)i, 0, 0, Color.magenta);
                     m_MagentaCubeTexture.Apply();
@@ -107,7 +155,7 @@ namespace UnityEngine.Rendering
             {
                 if (m_MagentaCubeTextureArray == null)
                 {
-                    m_MagentaCubeTextureArray = new CubemapArray(1, 1, TextureFormat.RGBAFloat, false);
+                    m_MagentaCubeTextureArray = new CubemapArray(1, 1, GraphicsFormat.R32G32B32A32_SFloat, TextureCreationFlags.None);
                     for (int i = 0; i < 6; ++i)
                     {
                         Color[] colors = { Color.magenta };
@@ -130,7 +178,7 @@ namespace UnityEngine.Rendering
             {
                 if (m_WhiteCubeTexture == null)
                 {
-                    m_WhiteCubeTexture = new Cubemap(1, TextureFormat.ARGB32, false);
+                    m_WhiteCubeTexture = new Cubemap(1, GraphicsFormat.R8G8B8A8_SRGB, TextureCreationFlags.None);
                     for (int i = 0; i < 6; ++i)
                         m_WhiteCubeTexture.SetPixel((CubemapFace)i, 0, 0, Color.white);
                     m_WhiteCubeTexture.Apply();
@@ -170,7 +218,7 @@ namespace UnityEngine.Rendering
                 if (m_BlackVolumeTexture == null)
                 {
                     Color[] colors = { Color.black };
-                    m_BlackVolumeTexture = new Texture3D(1, 1, 1, TextureFormat.ARGB32, false);
+                    m_BlackVolumeTexture = new Texture3D(1, 1, 1, GraphicsFormat.R8G8B8A8_SRGB, TextureCreationFlags.None);
                     m_BlackVolumeTexture.SetPixels(colors, 0);
                     m_BlackVolumeTexture.Apply();
                 }
@@ -1038,7 +1086,7 @@ namespace UnityEngine.Rendering
         {
             bool enabled = true;
 
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
             if (camera.cameraType == CameraType.SceneView)
             {
                 enabled = false;
@@ -1058,7 +1106,7 @@ namespace UnityEngine.Rendering
                     }
                 }
             }
-#endif
+        #endif
 
             return enabled;
         }
@@ -1072,7 +1120,7 @@ namespace UnityEngine.Rendering
         {
             bool animateMaterials = true;
 
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
             animateMaterials = Application.isPlaying; // For Game and VR views; Reflection views pass the parent camera
 
             if (camera.cameraType == CameraType.SceneView)
@@ -1083,11 +1131,11 @@ namespace UnityEngine.Rendering
                 for (int i = 0; i < UnityEditor.SceneView.sceneViews.Count; i++) // Using a foreach on an ArrayList generates garbage ...
                 {
                     var sv = UnityEditor.SceneView.sceneViews[i] as UnityEditor.SceneView;
-#if UNITY_2020_2_OR_NEWER
+            #if UNITY_2020_2_OR_NEWER
                     if (sv.camera == camera && sv.sceneViewState.alwaysRefreshEnabled)
-#else
+            #else
                     if (sv.camera == camera && sv.sceneViewState.materialUpdateEnabled)
-#endif
+            #endif
                     {
                         animateMaterials = true;
                         break;
@@ -1117,7 +1165,7 @@ namespace UnityEngine.Rendering
             // which simply amounts to a recursive call, and then the story repeats itself.
             //
             // TLDR: we need to know the caller and its status/properties to make decisions.
-#endif
+        #endif
 
             return animateMaterials;
         }

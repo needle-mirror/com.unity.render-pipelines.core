@@ -10,14 +10,14 @@ namespace UnityEngine.Rendering
     /// </summary>
     public class RTHandle
     {
-        internal RTHandleSystem m_Owner;
-        internal RenderTexture m_RT;
-        internal Texture m_ExternalTexture;
-        internal RenderTargetIdentifier m_NameID;
-        internal bool m_EnableMSAA = false;
-        internal bool m_EnableRandomWrite = false;
-        internal bool m_EnableHWDynamicScale = false;
-        internal string m_Name;
+        internal RTHandleSystem             m_Owner;
+        internal RenderTexture              m_RT;
+        internal Texture                    m_ExternalTexture;
+        internal RenderTargetIdentifier     m_NameID;
+        internal bool                       m_EnableMSAA = false;
+        internal bool                       m_EnableRandomWrite = false;
+        internal bool                       m_EnableHWDynamicScale = false;
+        internal string                     m_Name;
 
         /// <summary>
         /// Scale factor applied to the RTHandle reference size.
@@ -28,15 +28,15 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// Returns true if the RTHandle uses automatic scaling.
         /// </summary>
-        public bool useScaling { get; internal set; }
+        public bool                         useScaling { get; internal set; }
         /// <summary>
         /// Reference size of the RTHandle System associated with the RTHandle
         /// </summary>
-        public Vector2Int referenceSize { get; internal set; }
+        public Vector2Int                   referenceSize {get; internal set; }
         /// <summary>
         /// Current properties of the RTHandle System
         /// </summary>
-        public RTHandleProperties rtHandleProperties { get { return m_Owner.rtHandleProperties; } }
+        public RTHandleProperties           rtHandleProperties { get { return m_Owner.rtHandleProperties; } }
         /// <summary>
         /// RenderTexture associated with the RTHandle
         /// </summary>
@@ -62,13 +62,18 @@ namespace UnityEngine.Rendering
         }
 
         /// <summary>
-        /// Implicit conversion operator to RenderTargetIdentifier
+        /// Implicit conversion operator to RenderTexture
         /// </summary>
         /// <param name="handle">Input RTHandle</param>
-        /// <returns>RenderTargetIdentifier representation of the RTHandle.</returns>
-        public static implicit operator RenderTargetIdentifier(RTHandle handle)
+        /// <returns>RenderTexture representation of the RTHandle.</returns>
+        public static implicit operator RenderTexture(RTHandle handle)
         {
-            return handle != null ? handle.nameID : default(RenderTargetIdentifier);
+            // If RTHandle is null then conversion should give a null RenderTexture
+            if (handle == null)
+                return null;
+
+            Debug.Assert(handle.rt != null, "RTHandle was created using a regular Texture and is used as a RenderTexture");
+            return handle.rt;
         }
 
         /// <summary>
@@ -87,23 +92,18 @@ namespace UnityEngine.Rendering
         }
 
         /// <summary>
-        /// Implicit conversion operator to RenderTexture
+        /// Implicit conversion operator to RenderTargetIdentifier
         /// </summary>
         /// <param name="handle">Input RTHandle</param>
-        /// <returns>RenderTexture representation of the RTHandle.</returns>
-        public static implicit operator RenderTexture(RTHandle handle)
+        /// <returns>RenderTargetIdentifier representation of the RTHandle.</returns>
+        public static implicit operator RenderTargetIdentifier(RTHandle handle)
         {
-            // If RTHandle is null then conversion should give a null RenderTexture
-            if (handle == null)
-                return null;
-
-            Debug.Assert(handle.rt != null, "RTHandle was created using a regular Texture and is used as a RenderTexture");
-            return handle.rt;
+            return handle != null ? handle.nameID : default(RenderTargetIdentifier);
         }
 
         internal void SetRenderTexture(RenderTexture rt)
         {
-            m_RT = rt;
+            m_RT =  rt;
             m_ExternalTexture = null;
             m_NameID = new RenderTargetIdentifier(rt);
         }
@@ -141,9 +141,6 @@ namespace UnityEngine.Rendering
         /// <returns>Input size scaled by the RTHandle scale factor.</returns>
         public Vector2Int GetScaledSize(Vector2Int refSize)
         {
-            if (!useScaling)
-                return refSize;
-
             if (scaleFunc != null)
             {
                 return scaleFunc(refSize);
@@ -153,6 +150,25 @@ namespace UnityEngine.Rendering
                 return new Vector2Int(
                     x: Mathf.RoundToInt(scaleFactor.x * refSize.x),
                     y: Mathf.RoundToInt(scaleFactor.y * refSize.y)
+                );
+            }
+        }
+
+        /// <summary>
+        /// Return the scaled size of the RTHandle.
+        /// </summary>
+        /// <returns>The scaled size of the RTHandle.</returns>
+        public Vector2Int GetScaledSize()
+        {
+            if (scaleFunc != null)
+            {
+                return scaleFunc(referenceSize);
+            }
+            else
+            {
+                return new Vector2Int(
+                    x: Mathf.RoundToInt(scaleFactor.x * referenceSize.x),
+                    y: Mathf.RoundToInt(scaleFactor.y * referenceSize.y)
                 );
             }
         }

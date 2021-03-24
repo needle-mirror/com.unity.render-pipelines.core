@@ -33,11 +33,11 @@ namespace UnityEngine.Experimental.Rendering.RenderGraphModule
 
         class RenderGraphResourcesData
         {
-            public DynamicArray<IRenderGraphResource> resourceArray = new DynamicArray<IRenderGraphResource>();
-            public int sharedResourcesCount;
-            public IRenderGraphResourcePool pool;
-            public ResourceCallback createResourceCallback;
-            public ResourceCallback releaseResourceCallback;
+            public DynamicArray<IRenderGraphResource>   resourceArray = new DynamicArray<IRenderGraphResource>();
+            public int                                  sharedResourcesCount;
+            public IRenderGraphResourcePool             pool;
+            public ResourceCallback                     createResourceCallback;
+            public ResourceCallback                     releaseResourceCallback;
 
             public void Clear(bool onException, int frameIndex)
             {
@@ -80,14 +80,14 @@ namespace UnityEngine.Experimental.Rendering.RenderGraphModule
             }
         }
 
-        RenderGraphResourcesData[] m_RenderGraphResources = new RenderGraphResourcesData[(int)RenderGraphResourceType.Count];
-        DynamicArray<RendererListResource> m_RendererListResources = new DynamicArray<RendererListResource>();
-        RenderGraphDebugParams m_RenderGraphDebug;
-        RenderGraphLogger m_Logger;
-        int m_CurrentFrameIndex;
-        int m_ExecutionCount;
+        RenderGraphResourcesData[]          m_RenderGraphResources = new RenderGraphResourcesData[(int)RenderGraphResourceType.Count];
+        DynamicArray<RendererListResource>  m_RendererListResources = new DynamicArray<RendererListResource>();
+        RenderGraphDebugParams              m_RenderGraphDebug;
+        RenderGraphLogger                   m_Logger;
+        int                                 m_CurrentFrameIndex;
+        int                                 m_ExecutionCount;
 
-        RTHandle m_CurrentBackbuffer;
+        RTHandle                            m_CurrentBackbuffer;
 
         #region Internal Interface
         internal RTHandle GetTexture(in TextureHandle handle)
@@ -564,9 +564,6 @@ namespace UnityEngine.Experimental.Rendering.RenderGraphModule
 
         internal void PurgeUnusedGraphicsResources()
         {
-            // TODO RENDERGRAPH: Might not be ideal to purge stale resources every frame.
-            // In case users enable/disable features along a level it might provoke performance spikes when things are reallocated...
-            // Will be much better when we have actual resource aliasing and we can manage memory more efficiently.
             for (int i = 0; i < (int)RenderGraphResourceType.Count; ++i)
                 m_RenderGraphResources[i].PurgeUnusedGraphicsResources(m_CurrentFrameIndex);
         }
