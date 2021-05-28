@@ -1,7 +1,7 @@
 {
   "name": "com.unity.render-pipelines.core",
   "description": "SRP Core makes it easier to create or customize a Scriptable Render Pipeline (SRP). SRP Core contains reusable code, including boilerplate code for working with platform-specific graphics APIs, utility functions for common rendering operations, and  shader libraries. The code in SRP Core is use by the High Definition Render Pipeline (HDRP) and Universal Render Pipeline (URP). If you are creating a custom SRP from scratch or customizing a prebuilt SRP, using SRP Core will save you time.",
-  "version": "10.5.0",
+  "version": "10.5.1",
   "unity": "2020.3",
   "unityRelease": "4f1",
   "displayName": "Core RP Library",
@@ -9,11 +9,11 @@
     "com.unity.ugui": "1.0.0"
   },
   "upmCi": {
-    "footprint": "b5ac4852ce875513636c4c17ab6cb71a7a354e71"
+    "footprint": "6b74958724b6c3c9fafe449457ad7f58ba2210e3"
   },
   "repository": {
     "url": "https://github.com/Unity-Technologies/Graphics.git",
     "type": "git",
-    "revision": "7ff8fd444c179fd9bb380d61f4865be6935b47dd"
+    "revision": "73f32e8fcc2d0cbf3b73a16a5e30eb5cede41576"
   }
 }
