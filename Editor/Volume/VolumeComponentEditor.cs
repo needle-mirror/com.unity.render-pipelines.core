@@ -249,8 +249,7 @@ namespace UnityEditor.Rendering
             GetFields(target, fields);
 
             m_Parameters = fields
-                .Select(t =>
-            {
+                .Select(t => {
                 var name = "";
                 var order = 0;
                 var attr = (DisplayInfoAttribute[])t.Item1.GetCustomAttributes(typeof(DisplayInfoAttribute), true);
