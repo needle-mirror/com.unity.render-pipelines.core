@@ -30,10 +30,6 @@ namespace UnityEditor
         VisualElement m_GameViewRootElement;
         VisualElement m_ClickCatcher;
 
-        SerializedProperty m_DistanceProperty;
-        SerializedProperty m_FrameSpaceProperty;
-        SerializedProperty m_AnchorPositionOverrideProperty;
-
         LightAnchor manipulator
         {
             get { return target as LightAnchor; }
@@ -66,7 +62,6 @@ namespace UnityEditor
             bool pitchChanged = false;
             bool rollChanged = false;
             bool distanceChanged = false;
-            bool positionOverrideChanged = false;
             bool upChanged = false;
 
             using (var change = new EditorGUI.ChangeCheckScope())
@@ -131,16 +126,13 @@ namespace UnityEditor
                 EditorGUILayout.Space();
 
                 EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(m_DistanceProperty, LightAnchorStyles.distanceProperty);
+                m_Distance = EditorGUILayout.FloatField(LightAnchorStyles.distanceProperty, manipulator.distance);
                 distanceChanged = EditorGUI.EndChangeCheck();
 
                 EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(m_FrameSpaceProperty, LightAnchorStyles.upDirectionProperty);
+                var dropRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+                m_FrameSpace = (LightAnchor.UpDirection)EditorGUI.EnumPopup(dropRect, LightAnchorStyles.upDirectionProperty, manipulator.frameSpace);
                 upChanged = EditorGUI.EndChangeCheck();
-
-                EditorGUI.BeginChangeCheck();
-                EditorGUILayout.PropertyField(m_AnchorPositionOverrideProperty, LightAnchorStyles.anchorPositionOverrideProperty);
-                positionOverrideChanged = EditorGUI.EndChangeCheck();
 
                 if (m_FoldoutPreset = EditorGUILayout.Foldout(m_FoldoutPreset, "Common"))
                 {
@@ -274,11 +266,11 @@ namespace UnityEditor
                 {
                     Undo.RecordObjects(new UnityEngine.Object[] { target, manipulator.transform }, "Light Anchor Change");
 
-                    manipulator.frameSpace = (LightAnchor.UpDirection)m_FrameSpaceProperty.intValue;
+                    manipulator.frameSpace = m_FrameSpace;
                     manipulator.SynchronizeOnTransform(camera);
                     UpdateCache();
                 }
-                if (yawChanged || pitchChanged || rollChanged || distanceChanged || positionOverrideChanged)
+                if (yawChanged || pitchChanged || rollChanged || distanceChanged)
                 {
                     Undo.RecordObjects(new UnityEngine.Object[] { target, manipulator.transform }, "Light Anchor Change");
 
@@ -289,32 +281,7 @@ namespace UnityEditor
                     if (rollChanged)
                         manipulator.roll = m_Roll;
                     if (distanceChanged)
-                        manipulator.distance = m_DistanceProperty.floatValue;
-                    if (positionOverrideChanged)
-                    {
-                        var newTransform = m_AnchorPositionOverrideProperty.objectReferenceValue as Transform;
-
-                        if (newTransform != null)
-                        {
-                            // Check that the assigned transform is not child of the light anchor, otherwise it would cause problems when moving the light position
-                            if (newTransform.IsChildOf(manipulator.transform))
-                                Debug.LogError($"Can't assign '{newTransform.name}' because it's a child of the Light Anchor component");
-                            else
-                            {
-                                float newDistance = Vector3.Distance(manipulator.transform.position, newTransform.position);
-                                manipulator.anchorPositionOverride = newTransform;
-                                // Orient the object to face the new override position
-                                manipulator.SynchronizeOnTransform(camera);
-                                // And adjust it's distance to avoid modifying it's position.
-                                manipulator.distance = newDistance;
-                            }
-                        }
-                        else
-                            manipulator.anchorPositionOverride = newTransform;
-                    }
-
-                    if (manipulator.anchorPositionOverride != null)
-                        anchor = manipulator.anchorPosition;
+                        manipulator.distance = m_Distance;
 
                     manipulator.UpdateTransform(camera, anchor);
                     IsCacheInvalid(manipulator);
@@ -354,10 +321,6 @@ namespace UnityEditor
                     EnableClickCatcher(m_EnableClickCatcher);
                 }
             }
-
-            m_DistanceProperty = serializedObject.FindProperty("m_Distance");
-            m_FrameSpaceProperty = serializedObject.FindProperty("m_FrameSpace");
-            m_AnchorPositionOverrideProperty = serializedObject.FindProperty("m_AnchorPositionOverride");
         }
 
         void EditorToolsOnactiveToolChanged()
@@ -598,7 +561,6 @@ namespace UnityEditor
         static public GUIContent presetTextureRimRight = EditorGUIUtility.TrTextContent("", "Rim Right", UnityEditor.Rendering.CoreEditorUtils.LoadIcon(LightAnchorStyles.k_IconFolder, "PresetRim_Right", ".png", false));
         static public GUIContent distanceProperty = EditorGUIUtility.TrTextContent("Distance", "Controls how far 'back', the light is placed from its anchor");
         static public GUIContent upDirectionProperty = EditorGUIUtility.TrTextContent("Up direction", "Specifies the space in which the up direction of the anchor is defined. Local is relative to the camera.");
-        static public GUIContent anchorPositionOverrideProperty = EditorGUIUtility.TrTextContent("Anchor Position Override", "Specifies the anchor position manually instead of relying on the angles, distance and transform position to compute the anchor position.");
         static public GUIContent[] angleSubContent = new[]
         {
             EditorGUIUtility.TrTextContent("Orbit"),

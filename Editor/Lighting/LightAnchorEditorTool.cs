@@ -30,10 +30,7 @@ namespace UnityEditor
         /// <returns>Always return true</returns>
         public override bool IsAvailable()
         {
-            var lightAnchor = target as LightAnchor;
-
-            // Hide the transform if a position override object is assigned
-            return (lightAnchor?.anchorPositionOverride == null);
+            return true;
         }
 
         /// <summary>
@@ -42,7 +39,7 @@ namespace UnityEditor
         /// <param name="window">The window that is displaying the custom editor tool.</param>
         public override void OnToolGUI(EditorWindow window)
         {
-            if (target is LightAnchor l && l?.anchorPositionOverride == null)
+            if (target == null)
                 return;
 
             DoTargetGUI(target);
@@ -115,7 +112,7 @@ namespace UnityEditor
             LightAnchorHandles handles;
             if (!m_LightAnchorHandles.TryGetValue(obj, out handles))
             {
-                handles = new LightAnchorHandles(obj as LightAnchor);
+                handles = new LightAnchorHandles();
                 m_LightAnchorHandles.Add(obj, handles);
             }
 

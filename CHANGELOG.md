@@ -4,12 +4,6 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [12.1.0] - 2021-09-23
-
-### Fixed
-- Fixed black pixel issue in AMD FidelityFX RCAS implementation
-- Fixed a critical issue on android devices & lens flares. Accidentally creating a 16 bit texture was causing gpus not supporting them to fail.
-
 ## [12.0.0] - 2021-01-11
 
 ### Added
@@ -23,7 +17,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - New method DrawHeaders for VolumeComponentsEditors
 - Unification of Material Editor Headers Scopes
 - New API functions with no side effects in DynamicResolutionHandler, to retrieve resolved drs scale and to apply DRS on a size.
-- Added helper for Volumes (Enable All Overrides, Disable All Overrides, Remove All Overrides).
 - Added a blitter utility class. Moved from HDRP to RP core.
 - Added a realtime 2D texture atlas utility classes. Moved from HDRP to RP core.
 - New methods on CoreEditorDrawers, to allow adding a label on a group before rendering the internal drawers
@@ -47,14 +40,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added common include file for meta pass functionality (case 1211436)
 - Added OverridablePropertyScope (for VolumeComponentEditor child class only) to handle the Additional Property, the override checkbox and disable display and decorator attributes in one scope.
 - Added IndentLevelScope (for VolumeComponentEditor child class only) to handle indentation of the field and the checkbox.
-- Added an option to change the visibilty of the Volumes Gizmos (Solid, Wireframe, Everything), available at Preferences > Core Render Pipeline
 - Added class for drawing shadow cascades `UnityEditor.Rendering.ShadowCascadeGUI.DrawShadowCascades`.
 - Added UNITY_PREV_MATRIX_M and UNITY_PREV_MATRIX_I_M shader macros to support instanced motion vector rendering
-- Added new API to customize the rtHandleProperties of a particular RTHandle. This is a temporary work around to assist with viewport setup of Custom post process when dealing with DLSS or TAAU
-- Added `IAdditionalData` interface to identify the additional datas on the core package.
 
 ### Fixed
-- Help boxes with fix buttons do not crop the label.
 - Fixed missing warning UI about Projector component being unsupported (case 1300327).
 - Fixed the display name of a Volume Parameter when is defined the attribute InspectorName
 - Calculating correct rtHandleScale by considering the possible pixel rounding when DRS is on
@@ -84,13 +73,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed Lens Flare Thumbnails
 - Fixed Lens Flare 'radialScreenAttenuationCurve invisible'
 - Fixed Lens Flare rotation for Curve Distribution
-- Fixed potentially conflicting runtime Rendering Debugger UI command by adding an option to disable runtime UI altogether (1345783).
-- Fixed Lens Flare position for celestial at very far camera distances. It now locks correctly into the celestial position regardless of camera distance (1363291)
-- Fixed issues caused by automatically added EventSystem component, required to support Rendering Debugger Runtime UI input. (1361901)
-- Fixed API to draw color temperature for Lights.
 
 ### Changed
-- Improved the warning messages for Volumes and their Colliders.
 - Changed Window/Render Pipeline/Render Pipeline Debug to Window/Analysis/Rendering Debugger
 - Changed Window/Render Pipeline/Look Dev to Window/Analysis/Look Dev
 - Changed Window/Render Pipeline/Render Graph Viewer to Window/Analysis/Render Graph Viewer
@@ -110,9 +94,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Serialize the Probe Volume asset as binary to improve footprint on disk and loading speed.
 - LensFlare Element editor now have Thumbnail preview
 - Improved IntegrateLDCharlie() to use uniform stratified sampling for faster convergence towards the ground truth
-- DynamicResolutionHandler.GetScaledSize function now clamps, and never allows to return a size greater than its input.
-- Removed DYNAMIC_RESOLUTION snippet on lens flare common shader. Its not necessary any more on HDRP, which simplifies the shader.
-- Made occlusion Radius for lens flares in directional lights, be independant of the camera's far plane.
 
 ## [11.0.0] - 2020-10-21
 

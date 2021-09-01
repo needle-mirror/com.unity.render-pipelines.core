@@ -51,9 +51,7 @@ namespace UnityEngine.Experimental.Rendering
     {
         static bool m_IsInit = false;
         static BakingBatch m_BakingBatch;
-        static ProbeReferenceVolumeProfile m_BakingProfile = null;
-        static ProbeVolumeBakingProcessSettings m_BakingSettings;
-
+        static ProbeReferenceVolumeAuthoring m_BakingReferenceVolumeAuthoring = null;
         static int m_BakingBatchIndex = 0;
 
         static Bounds globalBounds = new Bounds();
@@ -86,12 +84,19 @@ namespace UnityEngine.Experimental.Rendering
 
         static public void Clear()
         {
-            var perSceneData = GameObject.FindObjectsOfType<ProbeVolumePerSceneData>();
-            foreach (var data in perSceneData)
+            var refVolAuthList = GameObject.FindObjectsOfType<ProbeReferenceVolumeAuthoring>();
+
+            foreach (var refVolAuthoring in refVolAuthList)
             {
-                data.InvalidateAllAssets();
+                if (!refVolAuthoring.enabled || !refVolAuthoring.gameObject.activeSelf)
+                    continue;
+
+                refVolAuthoring.volumeAsset = null;
+
                 var refVol = ProbeReferenceVolume.instance;
                 refVol.Clear();
+                refVol.SetTRS(Vector3.zero, Quaternion.identity, refVolAuthoring.brickSize);
+                refVol.SetMaxSubdivision(refVolAuthoring.maxSubdivision);
             }
 
             var probeVolumes = GameObject.FindObjectsOfType<ProbeVolume>();
@@ -101,42 +106,45 @@ namespace UnityEngine.Experimental.Rendering
             }
         }
 
-        public static void FindWorldBounds(out bool hasFoundInvalidSetup)
+        public static void FindWorldBounds()
         {
             ProbeReferenceVolume.instance.clearAssetsOnVolumeClear = true;
-            hasFoundInvalidSetup = false;
 
-            var sceneData = ProbeReferenceVolume.instance.sceneData;
+
+            var sceneBounds = ProbeReferenceVolume.instance.sceneBounds;
             HashSet<string> scenesToConsider = new HashSet<string>();
 
-            var activeScene = SceneManager.GetActiveScene();
-            var activeSet = sceneData.GetBakingSetForScene(activeScene);
-
-            // We assume that all the bounds for all the scenes in the set have been set. However we also update the scenes that are currently loaded anyway for security.
-            // and to have a new trigger to update the bounds we have.
-            int openedScenesCount = SceneManager.sceneCount;
-            for (int i = 0; i < openedScenesCount; ++i)
+            for (int i = 0; i < EditorSceneManager.sceneCount; ++i)
             {
-                var scene = SceneManager.GetSceneAt(i);
-                sceneData.OnSceneSaved(scene); // We need to perform the same actions we do when the scene is saved.
-                if (sceneData.GetBakingSetForScene(scene) != activeSet && sceneData.SceneHasProbeVolumes(scene))
-                {
-                    Debug.LogError($"Scene at {scene.path} is loaded and has probe volumes, but not part of the same baking set as the active scene. This will result in an error. Please make sure all loaded scenes are part of the same baking sets.");
-                }
+                var scene = EditorSceneManager.GetSceneAt(i);
+                sceneBounds.UpdateSceneBounds(scene);
+                // !!! IMPORTANT TODO !!!
+                // When we will have the concept of baking set this should be reverted, if a scene is not in the bake set it should not be considered
+                // As of now we include all open scenes as the workflow is not nice or clear. When it'll be we should *NOT* do it.
+                scenesToConsider.Add(scene.path);
             }
 
 
+            foreach (var scene in EditorBuildSettings.scenes)
+            {
+                // We consider only scenes that exist.
+                if (System.IO.File.Exists(scene.path))
+                    scenesToConsider.Add(scene.path);
+            }
+
+
+            List<Scene> openedScenes = new List<Scene>();
             hasFoundBounds = false;
 
-            foreach (var sceneGUID in activeSet.sceneGUIDs)
+            foreach (var scenePath in scenesToConsider)
             {
                 bool hasProbeVolumes = false;
-                if (sceneData.hasProbeVolumes.TryGetValue(sceneGUID, out hasProbeVolumes))
+                if (sceneBounds.hasProbeVolumes.TryGetValue(scenePath, out hasProbeVolumes))
                 {
                     if (hasProbeVolumes)
                     {
                         Bounds localBound;
-                        if (sceneData.sceneBounds.TryGetValue(sceneGUID, out localBound))
+                        if (sceneBounds.sceneBounds.TryGetValue(scenePath, out localBound))
                         {
                             if (hasFoundBounds)
                             {
@@ -152,53 +160,83 @@ namespace UnityEngine.Experimental.Rendering
                 }
                 else // we need to open the scene to test.
                 {
-                    Debug.Log("The probe volume system couldn't find data for all the scenes in the baking set. Consider opening the scenes in the set and save them. Alternatively, bake the full set.");
-                    hasFoundInvalidSetup = true;
+                    // We open only if the scene still exists (might have been removed)
+                    if (System.IO.File.Exists(scenePath))
+                    {
+                        var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+                        openedScenes.Add(scene);
+                        sceneBounds.UpdateSceneBounds(scene);
+                        Bounds localBound = sceneBounds.sceneBounds[scene.path];
+                        if (hasFoundBounds)
+                            globalBounds.Encapsulate(localBound);
+                        else
+                            globalBounds = localBound;
+                    }
+                }
+            }
+
+            if (openedScenes.Count > 0)
+            {
+                foreach (var scene in openedScenes)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
                 }
             }
         }
 
-        static void SetBakingContext(ProbeVolumePerSceneData[] perSceneData)
+        static ProbeReferenceVolumeAuthoring GetCardinalAuthoringComponent(ProbeReferenceVolumeAuthoring[] refVolAuthList)
         {
-            // We need to make sure all scenes we are baking have the same profile. The same should be done for the baking settings, but we check only profile.
-            // TODO: This should be ensured by the controlling panel, until we have that we need to assert.
+            List<ProbeReferenceVolumeAuthoring> enabledVolumes = new List<ProbeReferenceVolumeAuthoring>();
 
-            // To check what are  the scenes that have probe volume enabled we checks the ProbeVolumePerSceneData. We are guaranteed to have only one per scene.
-            for (int i = 0; i < perSceneData.Length; ++i)
+            foreach (var refVolAuthoring in refVolAuthList)
             {
-                var data = perSceneData[i];
-                var scene = data.gameObject.scene;
-                var profile = ProbeReferenceVolume.instance.sceneData.GetProfileForScene(scene);
-                Debug.Assert(profile != null, "Trying to bake a scene without a profile properly set.");
+                if (!refVolAuthoring.enabled || !refVolAuthoring.gameObject.activeSelf)
+                    continue;
 
-                if (i == 0)
-                {
-                    m_BakingProfile = profile;
-                    Debug.Assert(ProbeReferenceVolume.instance.sceneData.BakeSettingsDefinedForScene(scene));
-                    m_BakingSettings = ProbeReferenceVolume.instance.sceneData.GetBakeSettingsForScene(scene);
-                }
-                else
-                {
-                    Debug.Assert(m_BakingProfile.IsEquivalent(profile));
-                }
+                enabledVolumes.Add(refVolAuthoring);
             }
+
+            int numVols = enabledVolumes.Count;
+
+            if (numVols == 0)
+                return null;
+
+            if (numVols == 1)
+                return enabledVolumes[0];
+
+            var reference = enabledVolumes[0];
+            for (int c = 1; c < numVols; ++c)
+            {
+                var compare = enabledVolumes[c];
+                if (!reference.profile.IsEquivalent(compare.profile))
+                    return null;
+            }
+
+            return reference;
         }
 
         static void OnBakeStarted()
         {
             if (!ProbeReferenceVolume.instance.isInitialized) return;
 
-            var pvList = GameObject.FindObjectsOfType<ProbeVolume>();
-            if (pvList.Length == 0) return; // We have no probe volumes.
+            var refVolAuthList = GameObject.FindObjectsOfType<ProbeReferenceVolumeAuthoring>();
+            if (refVolAuthList.Length == 0)
+                return;
 
-            FindWorldBounds(out bool hasFoundInvalidSetup);
-            var perSceneDataList = GameObject.FindObjectsOfType<ProbeVolumePerSceneData>();
-            if (perSceneDataList.Length == 0 || hasFoundInvalidSetup) return;
+            FindWorldBounds();
+            refVolAuthList = GameObject.FindObjectsOfType<ProbeReferenceVolumeAuthoring>();
 
-            SetBakingContext(perSceneDataList);
+            m_BakingReferenceVolumeAuthoring = GetCardinalAuthoringComponent(refVolAuthList);
 
-            if (m_BakingSettings.virtualOffsetSettings.useVirtualOffset)
-                AddOccluders();
+            if (m_BakingReferenceVolumeAuthoring == null)
+            {
+                Debug.Log("Scene(s) have multiple inconsistent ProbeReferenceVolumeAuthoring components. Please ensure they use identical profiles and transforms before baking.");
+                return;
+            }
+
+            var refVol = ProbeReferenceVolume.instance;
+
+            AddOccluders();
 
             RunPlacement();
         }
@@ -238,20 +276,18 @@ namespace UnityEngine.Experimental.Rendering
         // It is only a first iteration of the concept that won't be as impactful on memory as other options.
         internal static void RevertDilation()
         {
-            if (m_BakingProfile == null)
-            {
-                var perSceneDataList = GameObject.FindObjectsOfType<ProbeVolumePerSceneData>();
-                if (perSceneDataList.Length == 0) return;
-                SetBakingContext(perSceneDataList);
-            }
+            var refVolAuthList = GameObject.FindObjectsOfType<ProbeReferenceVolumeAuthoring>();
+            m_BakingReferenceVolumeAuthoring = GetCardinalAuthoringComponent(refVolAuthList);
+            m_BakingReferenceVolumeAuthoring = GetCardinalAuthoringComponent(refVolAuthList);
+            if (m_BakingReferenceVolumeAuthoring == null) return;
 
-            var dilationSettings = m_BakingSettings.dilationSettings;
+            var dilationSettings = m_BakingReferenceVolumeAuthoring.GetDilationSettings();
 
             foreach (var cell in ProbeReferenceVolume.instance.cells.Values)
             {
                 for (int i = 0; i < cell.validity.Length; ++i)
                 {
-                    if (dilationSettings.enableDilation && dilationSettings.dilationDistance > 0.0f && cell.validity[i] > dilationSettings.dilationValidityThreshold)
+                    if (dilationSettings.dilationDistance > 0.0f && cell.validity[i] > dilationSettings.dilationValidityThreshold)
                     {
                         for (int k = 0; k < 9; ++k)
                         {
@@ -269,38 +305,45 @@ namespace UnityEngine.Experimental.Rendering
         // proper UX.
         internal static void PerformDilation()
         {
+            HashSet<ProbeReferenceVolumeAuthoring> refVols = new HashSet<ProbeReferenceVolumeAuthoring>();
             Dictionary<int, List<string>> cell2Assets = new Dictionary<int, List<string>>();
-            var perSceneDataList = GameObject.FindObjectsOfType<ProbeVolumePerSceneData>();
-            if (perSceneDataList.Length == 0) return;
+            var refVolAuthList = GameObject.FindObjectsOfType<ProbeReferenceVolumeAuthoring>();
 
-            SetBakingContext(perSceneDataList);
+            m_BakingReferenceVolumeAuthoring = GetCardinalAuthoringComponent(refVolAuthList);
+            if (m_BakingReferenceVolumeAuthoring == null) return;
 
-            foreach (var sceneData in perSceneDataList)
+            foreach (var refVol in refVolAuthList)
             {
-                var asset = sceneData.GetCurrentStateAsset();
-                string assetPath = asset.GetSerializedFullPath();
-                foreach (var cell in asset.cells)
-                {
-                    if (!cell2Assets.ContainsKey(cell.index))
-                    {
-                        cell2Assets.Add(cell.index, new List<string>());
-                    }
+                if (m_BakingReferenceVolumeAuthoring == null)
+                    m_BakingReferenceVolumeAuthoring = refVol;
 
-                    cell2Assets[cell.index].Add(assetPath);
+                if (refVol.enabled)
+                {
+                    refVols.Add(refVol);
                 }
-                //// We need to queue the asset loading to make sure all is fine when calling refresh.
-                //sceneData.QueueAssetLoading();
             }
 
-            var dilationSettings = m_BakingSettings.dilationSettings;
-
-            if (dilationSettings.enableDilation && dilationSettings.dilationDistance > 0.0f)
+            foreach (var refVol in refVols)
             {
-                // Force maximum sh bands to perform dilation, we need to store what sh bands was selected from the settings as we need to restore
-                // post dilation.
-                var prevSHBands = ProbeReferenceVolume.instance.shBands;
-                ProbeReferenceVolume.instance.ForceSHBand(ProbeVolumeSHBands.SphericalHarmonicsL2);
+                if (refVol.volumeAsset != null)
+                {
+                    string assetPath = refVol.volumeAsset.GetSerializedFullPath();
+                    foreach (var cell in refVol.volumeAsset.cells)
+                    {
+                        if (!cell2Assets.ContainsKey(cell.index))
+                        {
+                            cell2Assets.Add(cell.index, new List<string>());
+                        }
 
+                        cell2Assets[cell.index].Add(assetPath);
+                    }
+                }
+            }
+
+            var dilationSettings = m_BakingReferenceVolumeAuthoring.GetDilationSettings();
+
+            if (dilationSettings.dilationDistance > 0.0f)
+            {
                 // TODO: This loop is very naive, can be optimized, but let's first verify if we indeed want this or not.
                 for (int iterations = 0; iterations < dilationSettings.dilationIterations; ++iterations)
                 {
@@ -316,13 +359,11 @@ namespace UnityEngine.Experimental.Rendering
                         dilatedCells.Add(cell);
                     }
 
-                    foreach (var sceneData in perSceneDataList)
+                    foreach (var refVol in refVols)
                     {
-                        var asset = sceneData.GetCurrentStateAsset();
-                        string assetPath = asset.GetSerializedFullPath();
-                        if (asset != null)
+                        if (refVol != null && refVol.volumeAsset != null)
                         {
-                            ProbeReferenceVolume.instance.AddPendingAssetRemoval(asset);
+                            ProbeReferenceVolume.instance.AddPendingAssetRemoval(refVol.volumeAsset);
                         }
                     }
 
@@ -333,12 +374,11 @@ namespace UnityEngine.Experimental.Rendering
                     // Put back cells
                     foreach (var cell in dilatedCells)
                     {
-                        foreach (var sceneData in perSceneDataList)
+                        foreach (var refVol in refVols)
                         {
-                            var asset = sceneData.GetCurrentStateAsset();
+                            if (refVol.volumeAsset == null) continue;
 
-                            if (asset == null) continue;
-
+                            var asset = refVol.volumeAsset;
                             var assetPath = asset.GetSerializedFullPath();
                             bool valueFound = false;
                             if (!assetCleared.TryGetValue(assetPath, out valueFound))
@@ -357,14 +397,12 @@ namespace UnityEngine.Experimental.Rendering
                     UnityEditor.AssetDatabase.SaveAssets();
                     UnityEditor.AssetDatabase.Refresh();
 
-                    foreach (var sceneData in perSceneDataList)
+                    foreach (var refVol in refVols)
                     {
-                        sceneData.QueueAssetLoading();
+                        if (refVol.enabled && refVol.gameObject.activeSelf)
+                            refVol.QueueAssetLoading();
                     }
                 }
-
-                // Need to restore the original sh bands
-                ProbeReferenceVolume.instance.ForceSHBand(prevSHBands);
             }
         }
 
@@ -394,12 +432,9 @@ namespace UnityEngine.Experimental.Rendering
             // Clear baked data
             Clear();
 
-            // Make sure all pending operations are done (needs to be after the Clear to unload all previous scenes)
-            probeRefVolume.PerformPendingOperations();
-
             onAdditionalProbesBakeCompletedCalled = true;
 
-            var dilationSettings = m_BakingSettings.dilationSettings;
+            var dilationSettings = m_BakingReferenceVolumeAuthoring.GetDilationSettings();
             // Fetch results of all cells
             for (int c = 0; c < numCells; ++c)
             {
@@ -433,7 +468,7 @@ namespace UnityEngine.Experimental.Rendering
                         if (l0 == 0.0f)
                             continue;
 
-                        if (dilationSettings.enableDilation && dilationSettings.dilationDistance > 0.0f && validity[j] > dilationSettings.dilationValidityThreshold)
+                        if (dilationSettings.dilationDistance > 0.0f && validity[j] > dilationSettings.dilationValidityThreshold)
                         {
                             for (int k = 0; k < 9; ++k)
                             {
@@ -488,15 +523,16 @@ namespace UnityEngine.Experimental.Rendering
             UnityEditor.Experimental.Lightmapping.SetAdditionalBakedProbes(m_BakingBatch.index, null);
 
             // Map from each scene to an existing reference volume
-            var scene2Data = new Dictionary<Scene, ProbeVolumePerSceneData>();
-            foreach (var data in GameObject.FindObjectsOfType<ProbeVolumePerSceneData>())
-                scene2Data[data.gameObject.scene] = data;
+            var scene2RefVol = new Dictionary<Scene, ProbeReferenceVolumeAuthoring>();
+            foreach (var refVol in GameObject.FindObjectsOfType<ProbeReferenceVolumeAuthoring>())
+                if (refVol.enabled)
+                    scene2RefVol[refVol.gameObject.scene] = refVol;
 
             // Map from each reference volume to its asset
-            var data2Asset = new Dictionary<ProbeVolumePerSceneData, ProbeVolumeAsset>();
-            foreach (var data in scene2Data.Values)
+            var refVol2Asset = new Dictionary<ProbeReferenceVolumeAuthoring, ProbeVolumeAsset>();
+            foreach (var refVol in scene2RefVol.Values)
             {
-                data2Asset[data] = ProbeVolumeAsset.CreateAsset(data.gameObject.scene);
+                refVol2Asset[refVol] = ProbeVolumeAsset.CreateAsset(refVol.gameObject.scene);
             }
 
             // Put cells into the respective assets
@@ -505,33 +541,29 @@ namespace UnityEngine.Experimental.Rendering
                 foreach (var scene in m_BakingBatch.cellIndex2SceneReferences[cell.index])
                 {
                     // This scene has a reference volume authoring component in it?
-                    ProbeVolumePerSceneData data = null;
-                    if (scene2Data.TryGetValue(scene, out data))
+                    ProbeReferenceVolumeAuthoring refVol = null;
+                    if (scene2RefVol.TryGetValue(scene, out refVol))
                     {
-                        var asset = data2Asset[data];
+                        var asset = refVol2Asset[refVol];
                         asset.cells.Add(cell);
-                        var profile = ProbeReferenceVolume.instance.sceneData.GetProfileForScene(scene);
-                        asset.StoreProfileData(profile);
-                        Debug.Assert(profile != null);
-                        CellCountInDirections(out asset.minCellPosition, out asset.maxCellPosition, profile.cellSizeInMeters);
+                        CellCountInDirections(out asset.minCellPosition, out asset.maxCellPosition, refVol.profile.cellSizeInMeters);
                         asset.globalBounds = globalBounds;
                     }
                 }
             }
 
             // Connect the assets to their components
-            foreach (var pair in data2Asset)
+            foreach (var pair in refVol2Asset)
             {
-                var data = pair.Key;
+                var refVol = pair.Key;
                 var asset = pair.Value;
 
-                // TODO: This will need to use the proper state, not default, when we have them.
-                data.StoreAssetForState(ProbeVolumeState.Default, asset);
+                refVol.volumeAsset = asset;
 
                 if (UnityEditor.Lightmapping.giWorkflowMode != UnityEditor.Lightmapping.GIWorkflowMode.Iterative)
                 {
-                    UnityEditor.EditorUtility.SetDirty(data);
-                    UnityEditor.EditorUtility.SetDirty(asset);
+                    UnityEditor.EditorUtility.SetDirty(refVol);
+                    UnityEditor.EditorUtility.SetDirty(refVol.volumeAsset);
                 }
             }
 
@@ -545,9 +577,10 @@ namespace UnityEngine.Experimental.Rendering
             UnityEditor.AssetDatabase.Refresh();
             probeRefVolume.clearAssetsOnVolumeClear = false;
 
-            foreach (var data in data2Asset.Keys)
+            foreach (var refVol in refVol2Asset.Keys)
             {
-                data.QueueAssetLoading();
+                if (refVol.enabled && refVol.gameObject.activeSelf)
+                    refVol.QueueAssetLoading();
             }
 
             // ---- Perform dilation ---
@@ -608,28 +641,23 @@ namespace UnityEngine.Experimental.Rendering
             ClearBakingBatch();
 
             // Subdivide the scene and place the bricks
-            var ctx = PrepareProbeSubdivisionContext();
+            var ctx = PrepareProbeSubdivisionContext(m_BakingReferenceVolumeAuthoring);
             var result = BakeBricks(ctx);
 
             // Compute probe positions and send them to the Lightmapper
-            float brickSize = m_BakingProfile.minBrickSize;
+            float brickSize = m_BakingReferenceVolumeAuthoring.brickSize;
             Matrix4x4 newRefToWS = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(brickSize, brickSize, brickSize));
+            //m_BakingReferenceVolumeAuthoring;
             ApplySubdivisionResults(result, newRefToWS);
         }
 
-        public static ProbeSubdivisionContext PrepareProbeSubdivisionContext()
+        public static ProbeSubdivisionContext PrepareProbeSubdivisionContext(ProbeReferenceVolumeAuthoring refVolume)
         {
             ProbeSubdivisionContext ctx = new ProbeSubdivisionContext();
 
             // Prepare all the information in the scene for baking GI.
             Vector3 refVolOrigin = Vector3.zero; // TODO: This will need to be center of the world bounds.
-            if (m_BakingProfile == null)
-            {
-                var perSceneDataList = GameObject.FindObjectsOfType<ProbeVolumePerSceneData>();
-                if (perSceneDataList.Length == 0) return ctx;
-                SetBakingContext(perSceneDataList);
-            }
-            ctx.Initialize(m_BakingProfile, refVolOrigin);
+            ctx.Initialize(refVolume, refVolOrigin);
 
             return ctx;
         }
@@ -641,7 +669,7 @@ namespace UnityEngine.Experimental.Rendering
             if (ctx.probeVolumes.Count == 0)
                 return result;
 
-            using (var gpuResources = ProbePlacement.AllocateGPUResources(ctx.probeVolumes.Count, ctx.profile.maxSubdivision))
+            using (var gpuResources = ProbePlacement.AllocateGPUResources(ctx.probeVolumes.Count, ctx.refVolume.profile.maxSubdivision))
             {
                 // subdivide all the cells and generate brick positions
                 foreach (var cell in ctx.cells)
@@ -786,7 +814,7 @@ namespace UnityEngine.Experimental.Rendering
 
             // Move positions before sending them
             var positions = m_BakingBatch.uniquePositions.Keys.ToArray();
-            VirtualOffsetSettings voSettings = m_BakingSettings.virtualOffsetSettings;
+            VirtualOffsetSettings voSettings = m_BakingReferenceVolumeAuthoring.GetVirtualOffsetSettings();
             if (voSettings.useVirtualOffset)
             {
                 for (int i = 0; i < positions.Length; ++i)
@@ -794,12 +822,11 @@ namespace UnityEngine.Experimental.Rendering
                     int subdivLevel = 0;
                     m_BakingBatch.uniqueBrickSubdiv.TryGetValue(positions[i], out subdivLevel);
                     float brickSize = ProbeReferenceVolume.CellSize(subdivLevel);
-                    float searchDistance = (brickSize * m_BakingProfile.minBrickSize) / ProbeBrickPool.kBrickCellCount;
+                    float searchDistance = (brickSize * m_BakingReferenceVolumeAuthoring.brickSize) / ProbeBrickPool.kBrickCellCount;
 
                     float scaleForSearchDist = voSettings.searchMultiplier;
                     positions[i] = PushPositionOutOfGeometry(positions[i], scaleForSearchDist * searchDistance, voSettings.outOfGeoOffset);
                 }
-                CleanupOccluders();
             }
 
             UnityEditor.Experimental.Lightmapping.SetAdditionalBakedProbes(m_BakingBatch.index, positions);

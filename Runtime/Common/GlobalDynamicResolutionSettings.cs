@@ -23,17 +23,17 @@ namespace UnityEngine.Rendering
     public enum DynamicResUpscaleFilter : byte
     {
         /// <summary>
-        /// Bilinear upscaling filter. Obsolete and not supported.
+        /// Bilinear upscaling filter.
         /// </summary>
-        [Obsolete("Bilinear upscale filter is considered obsolete and is not supported anymore, please use CatmullRom for a very cheap, but blurry filter.", false)] Bilinear,
+        Bilinear,
         /// <summary>
         /// Bicubic Catmull-Rom upscaling filter.
         /// </summary>
         CatmullRom,
         /// <summary>
-        /// Lanczos upscaling filter. Obsolete and not supported.
+        /// Lanczos upscaling filter.
         /// </summary>
-        [Obsolete("Lanczos upscale filter is considered obsolete and is not supported anymore, please use Contrast Adaptive Sharpening for very sharp filter or FidelityFX Super Resolution 1.0.", false)] Lanczos,
+        Lanczos,
         /// <summary>
         /// Contrast Adaptive Sharpening upscaling filter.
         /// </summary>
@@ -102,7 +102,7 @@ namespace UnityEngine.Rendering
 
         /// <summary>The type of dynamic resolution method.</summary>
         public DynamicResolutionType dynResType;
-        /// <summary>The default of upscaling filter used. It can be overridden via the API DynamicResolutionHandler.SetUpscaleFilter </summary>
+        /// <summary>The type of upscaling filter to use.</summary>
         public DynamicResUpscaleFilter upsampleFilter;
 
         /// <summary>Select whether dynamic resolution system will force a specific resolution percentage.</summary>

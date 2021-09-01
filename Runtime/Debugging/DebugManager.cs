@@ -86,29 +86,14 @@ namespace UnityEngine.Rendering
         /// </summary>
         public bool displayEditorUI => m_EditorOpen;
         /// <summary>
+        /// Controls whether the hotkey for opening and closing the debug window is enabled.
+        /// </summary>
+        public bool enableWindowHotkey = true;
+        /// <summary>
         /// Toggle the debug window.
         /// </summary>
         /// <param name="open">State of the debug window.</param>
         public void ToggleEditorUI(bool open) => m_EditorOpen = open;
-
-        private bool m_EnableRuntimeUI = true;
-
-        /// <summary>
-        /// Controls whether runtime UI can be enabled. When this is set to false, there will be no overhead
-        /// from debug GameObjects or runtime initialization.
-        /// </summary>
-        public bool enableRuntimeUI
-        {
-            get => m_EnableRuntimeUI;
-            set
-            {
-                if (value != m_EnableRuntimeUI)
-                {
-                    m_EnableRuntimeUI = value;
-                    DebugUpdater.SetEnabled(value);
-                }
-            }
-        }
 
         /// <summary>
         /// Displays the runtime version of the debug window.
@@ -140,7 +125,6 @@ namespace UnityEngine.Rendering
                 }
 
                 onDisplayRuntimeUIChanged(value);
-                DebugUpdater.HandleInternalEventSystemComponents(value);
             }
         }
 
@@ -152,16 +136,8 @@ namespace UnityEngine.Rendering
             get => m_RootUIPersistentCanvas != null && m_PersistentRoot.activeInHierarchy;
             set
             {
-                if (value)
-                {
-                    EnsurePersistentCanvas();
-                }
-                else
-                {
-                    CoreUtils.Destroy(m_PersistentRoot);
-                    m_PersistentRoot = null;
-                    m_RootUIPersistentCanvas = null;
-                }
+                CheckPersistentCanvas();
+                m_PersistentRoot.SetActive(value);
             }
         }
 
@@ -244,7 +220,7 @@ namespace UnityEngine.Rendering
                 m_RootUICanvas.SetScrollTarget(widget);
         }
 
-        void EnsurePersistentCanvas()
+        void CheckPersistentCanvas()
         {
             if (m_RootUIPersistentCanvas == null)
             {
@@ -277,7 +253,7 @@ namespace UnityEngine.Rendering
                 return;
             }
 
-            EnsurePersistentCanvas();
+            CheckPersistentCanvas();
             m_RootUIPersistentCanvas.Toggle(valueWidget);
         }
 

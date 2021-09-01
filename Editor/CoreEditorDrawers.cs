@@ -158,13 +158,7 @@ namespace UnityEditor.Rendering
                     m_ActionDrawers[i](data, owner);
 
                 if (m_Anim != null)
-                {
                     CoreEditorUtils.EndAdditionalPropertiesHighlight();
-
-                    // While the highlight is being changed, force the Repaint of the editor
-                    if (m_Anim.value > 0.0f)
-                        owner.Repaint();
-                }
             }
         }
 
@@ -403,7 +397,12 @@ namespace UnityEditor.Rendering
                 m_State = state;
                 m_Mask = mask;
 
-                m_HelpUrl = DocumentationUtils.GetHelpURL<TEnum>(mask);
+                var helpUrlAttribute = (HelpURLAttribute)mask
+                    .GetType()
+                    .GetCustomAttributes(typeof(HelpURLAttribute), false)
+                    .FirstOrDefault();
+
+                m_HelpUrl = helpUrlAttribute == null ? string.Empty : $"{helpUrlAttribute.URL}#{mask}";
 
                 m_Enabler = enabler;
                 m_SwitchEnabler = switchEnabler;
@@ -820,10 +819,8 @@ namespace UnityEditor.Rendering
         /// <param name="owner">The editor drawing</param>
         public static void Draw<TData>(this IEnumerable<CoreEditorDrawer<TData>.IDrawer> drawers, TData data, Editor owner)
         {
-            EditorGUILayout.BeginVertical();
             foreach (var drawer in drawers)
                 drawer.Draw(data, owner);
-            EditorGUILayout.EndVertical();
         }
     }
 }
