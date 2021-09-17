@@ -384,6 +384,8 @@
     #ifndef UNITY_DONT_INSTANCE_OBJECT_MATRICES
         #undef UNITY_MATRIX_M
         #undef UNITY_MATRIX_I_M
+        #undef UNITY_PREV_MATRIX_M
+        #undef UNITY_PREV_MATRIX_I_M
 
         // Use #if instead of preprocessor concatenation to avoid really hard to debug
         // preprocessing issues in some cases.
