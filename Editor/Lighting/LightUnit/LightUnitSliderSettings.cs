@@ -21,7 +21,7 @@ namespace UnityEditor.Rendering
         public LightUnitSliderUIDescriptor(LightUnitSliderUIRange[] valueRanges, float[] sliderDistribution,
                                            string cautionTooltip, string unitName, bool hasMarkers = true, bool clampValue = false)
             : this(valueRanges, sliderDistribution, cautionTooltip, cautionTooltip, unitName, hasMarkers, clampValue)
-        {}
+        { }
 
         /// <summary>
         /// Constructor
@@ -98,7 +98,7 @@ namespace UnityEditor.Rendering
         public LightUnitSliderUIRange(Texture2D icon, string tooltip, Vector2 value)
         // If no preset value provided, then by default it is the average of the value range.
             : this(icon, tooltip, value, 0.5f * (value.x + value.y))
-        {}
+        { }
 
         /// <summary>
         /// Constructor

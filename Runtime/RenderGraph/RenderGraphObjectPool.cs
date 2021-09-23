@@ -32,7 +32,7 @@ namespace UnityEngine.Experimental.Rendering.RenderGraphModule
         List<(object, (Type, int))> m_AllocatedArrays = new List<(object, (Type, int))>();
         List<MaterialPropertyBlock> m_AllocatedMaterialPropertyBlocks = new List<MaterialPropertyBlock>();
 
-        internal RenderGraphObjectPool() {}
+        internal RenderGraphObjectPool() { }
 
         /// <summary>
         /// Allocate a temporary typed array of a specific size.

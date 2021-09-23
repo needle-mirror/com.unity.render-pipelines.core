@@ -107,7 +107,7 @@ namespace UnityEngine.Rendering
             m_Width = width;
             m_Height = height;
             powerOfTwoPadding = potPadding;
-            m_NodePool = new ObjectPool<AtlasNode>(_ => {}, _ => {});
+            m_NodePool = new ObjectPool<AtlasNode>(_ => { }, _ => { });
         }
 
         public bool Allocate(ref Vector4 result, int width, int height)

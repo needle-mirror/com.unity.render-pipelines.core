@@ -21,6 +21,7 @@ namespace UnityEngine.Experimental.Rendering
     [AddComponentMenu("")] // Hide.
     internal class ProbeVolumePerSceneData : MonoBehaviour, ISerializationCallbackReceiver
     {
+
         [System.Serializable]
         struct SerializableAssetItem
         {
@@ -100,7 +101,6 @@ namespace UnityEngine.Experimental.Rendering
                     refVol.dilationValidtyThreshold = refVol.sceneData.GetBakeSettingsForScene(gameObject.scene).dilationSettings.dilationValidityThreshold;
                 }
 #endif
-                m_PreviousState = m_CurrentState;
             }
         }
 
@@ -138,6 +138,7 @@ namespace UnityEngine.Experimental.Rendering
 
                 QueueAssetLoading();
             }
+            m_PreviousState = m_CurrentState;
         }
     }
 }

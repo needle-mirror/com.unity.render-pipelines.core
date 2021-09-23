@@ -65,7 +65,6 @@ namespace UnityEditor.Rendering
                 Expression.Call(null, removeMenuItemMethodInfo, nameParam),
                 nameParam).Compile();
         }
-
         #endregion
 
         /// <summary>
