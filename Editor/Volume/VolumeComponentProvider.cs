@@ -27,7 +27,7 @@ namespace UnityEditor.Rendering
 
         class PathNode : IComparable<PathNode>
         {
-            public List<PathNode> nodes =  new List<PathNode>();
+            public List<PathNode> nodes = new List<PathNode>();
             public string name;
             public Type type;
 
