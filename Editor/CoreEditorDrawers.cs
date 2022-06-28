@@ -1,10 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
-using UnityEditor.AnimatedValues;
-using UnityEngine.Rendering;
 
 namespace UnityEditor.Rendering
 {
@@ -61,7 +57,7 @@ namespace UnityEditor.Rendering
         /// <param name="data">The data used</param>
         /// <param name="owner">The editor rendering</param>
         public delegate void SwitchEnabler(TData data, Editor owner);
-
+        
         /// <summary>Delegate that must be used to select sub object for data for drawing</summary>
         /// <typeparam name="T2Data">The type of the sub object used for data</typeparam>
         /// <param name="data">The data used</param>
@@ -78,7 +74,7 @@ namespace UnityEditor.Rendering
         public static readonly IDrawer space = Group((data, owner) => EditorGUILayout.Space());
 
         /// <summary> Use it when IDrawer required but no operation should be done </summary>
-        public static readonly IDrawer noop = Group((data, owner) => {});
+        public static readonly IDrawer noop = Group((data, owner) => { });
 
         /// <summary>
         /// Conditioned drawer that will only be drawn if its enabler function is null or return true
@@ -120,45 +116,6 @@ namespace UnityEditor.Rendering
 
                 for (var i = 0; i < actionDrawers.Length; i++)
                     actionDrawers[i](data, owner);
-            }
-        }
-
-        internal static IDrawer ConditionalWithAdditionalProperties(Enabler enabler, AnimFloat animation, params IDrawer[] contentDrawers)
-        {
-            return new ConditionalDrawerWithAdditionalPropertiesInternal(enabler, animation, contentDrawers.Draw);
-        }
-
-        internal static IDrawer ConditionalWithAdditionalProperties(Enabler enabler, AnimFloat animation, params ActionDrawer[] contentDrawers)
-        {
-            return new ConditionalDrawerWithAdditionalPropertiesInternal(enabler, animation, contentDrawers);
-        }
-
-        class ConditionalDrawerWithAdditionalPropertiesInternal : IDrawer
-        {
-            ActionDrawer[] m_ActionDrawers { get; set; }
-            Enabler m_Enabler;
-            AnimFloat m_Anim;
-
-            public ConditionalDrawerWithAdditionalPropertiesInternal(Enabler enabler = null, AnimFloat anim = null, params ActionDrawer[] actionDrawers)
-            {
-                m_ActionDrawers = actionDrawers;
-                m_Enabler = enabler;
-                m_Anim = anim;
-            }
-
-            void IDrawer.Draw(TData data, Editor owner)
-            {
-                if (m_Enabler != null && !m_Enabler(data, owner))
-                    return;
-
-                if (m_Anim != null)
-                    CoreEditorUtils.BeginAdditionalPropertiesHighlight(m_Anim);
-
-                for (var i = 0; i < m_ActionDrawers.Length; i++)
-                    m_ActionDrawers[i](data, owner);
-
-                if (m_Anim != null)
-                    CoreEditorUtils.EndAdditionalPropertiesHighlight();
             }
         }
 
@@ -212,7 +169,7 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(params IDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(-1f, null, GroupOption.None, contentDrawers.Draw);
+            return new GroupDrawerInternal(-1f, GroupOption.None, contentDrawers.Draw);
         }
 
         /// <summary>
@@ -223,7 +180,7 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(params ActionDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(-1f, null, GroupOption.None, contentDrawers);
+            return new GroupDrawerInternal(-1f, GroupOption.None, contentDrawers);
         }
 
         /// <summary> Group of drawing function for inspector with a set width for labels </summary>
@@ -232,16 +189,7 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(float labelWidth, params IDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(labelWidth, null, GroupOption.None, contentDrawers.Draw);
-        }
-
-        /// <summary> Group of drawing function for inspector with a set width for labels </summary>
-        /// <param name="header">Adds a header on top <see cref="GUIContent"/></param>
-        /// <param name="contentDrawers">The content of the group</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer Group(GUIContent header, params IDrawer[] contentDrawers)
-        {
-            return new GroupDrawerInternal(-1f, header, GroupOption.None, contentDrawers.Draw);
+            return new GroupDrawerInternal(labelWidth, GroupOption.None, contentDrawers.Draw);
         }
 
         /// <summary> Group of drawing function for inspector with a set width for labels </summary>
@@ -250,16 +198,7 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(float labelWidth, params ActionDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(labelWidth, null, GroupOption.None, contentDrawers);
-        }
-
-        /// <summary> Group of drawing function for inspector with a set width for labels </summary>
-        /// <param name="header">Adds a header on top <see cref="GUIContent"/></param>
-        /// <param name="contentDrawers">The content of the group</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer Group(GUIContent header, params ActionDrawer[] contentDrawers)
-        {
-            return new GroupDrawerInternal(-1f, header, GroupOption.None, contentDrawers);
+            return new GroupDrawerInternal(labelWidth, GroupOption.None, contentDrawers);
         }
 
         /// <summary>
@@ -271,7 +210,7 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(GroupOption options, params IDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(-1f, null, options, contentDrawers.Draw);
+            return new GroupDrawerInternal(-1f, options, contentDrawers.Draw);
         }
 
         /// <summary>
@@ -283,7 +222,7 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(GroupOption options, params ActionDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(-1f, null, options, contentDrawers);
+            return new GroupDrawerInternal(-1f, options, contentDrawers);
         }
 
         /// <summary> Group of drawing function for inspector with a set width for labels </summary>
@@ -293,17 +232,7 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(float labelWidth, GroupOption options, params IDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(labelWidth, null, options, contentDrawers.Draw);
-        }
-
-        /// <summary> Group of drawing function for inspector with a set width for labels </summary>
-        /// <param name="header">Adds a header on top <see cref="GUIContent"/></param>
-        /// <param name="options">Allow to add indentation on this group</param>
-        /// <param name="contentDrawers">The content of the group</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer Group(GUIContent header, GroupOption options, params IDrawer[] contentDrawers)
-        {
-            return new GroupDrawerInternal(-1f, header, options, contentDrawers.Draw);
+            return new GroupDrawerInternal(labelWidth, options, contentDrawers.Draw);
         }
 
         /// <summary> Group of drawing function for inspector with a set width for labels </summary>
@@ -313,30 +242,18 @@ namespace UnityEditor.Rendering
         /// <returns>A IDrawer object</returns>
         public static IDrawer Group(float labelWidth, GroupOption options, params ActionDrawer[] contentDrawers)
         {
-            return new GroupDrawerInternal(labelWidth, null, options, contentDrawers);
-        }
-
-        /// <summary> Group of drawing function for inspector with a set width for labels </summary>
-        /// <param name="header">Adds a header on top <see cref="GUIContent"/></param>
-        /// <param name="options">Allow to add indentation on this group</param>
-        /// <param name="contentDrawers">The content of the group</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer Group(GUIContent header, GroupOption options, params ActionDrawer[] contentDrawers)
-        {
-            return new GroupDrawerInternal(-1, header, options, contentDrawers);
+            return new GroupDrawerInternal(labelWidth, options, contentDrawers);
         }
 
         class GroupDrawerInternal : IDrawer
         {
             ActionDrawer[] actionDrawers { get; set; }
-            GUIContent header { get; }
             float m_LabelWidth;
             bool isIndented;
 
-            public GroupDrawerInternal(float labelWidth = -1f, GUIContent header = null, GroupOption options = GroupOption.None, params ActionDrawer[] actionDrawers)
+            public GroupDrawerInternal(float labelWidth = -1f, GroupOption options = GroupOption.None, params ActionDrawer[] actionDrawers)
             {
                 this.actionDrawers = actionDrawers;
-                this.header = header;
                 m_LabelWidth = labelWidth;
                 isIndented = (options & GroupOption.Indent) != 0;
             }
@@ -350,96 +267,14 @@ namespace UnityEditor.Rendering
                 {
                     EditorGUIUtility.labelWidth = m_LabelWidth;
                 }
-                if (header != null)
-                    EditorGUILayout.LabelField(header, EditorStyles.boldLabel);
-
                 for (var i = 0; i < actionDrawers.Length; i++)
                     actionDrawers[i](data, owner);
-
                 if (m_LabelWidth >= 0f)
                 {
                     EditorGUIUtility.labelWidth = currentLabelWidth;
                 }
                 if (isIndented)
                     --EditorGUI.indentLevel;
-            }
-        }
-
-        class FoldoutGroupDrawerInternal<TEnum, TState> : IDrawer
-            where TEnum : struct, IConvertible
-        {
-            readonly ActionDrawer[] m_ActionDrawers;
-
-            readonly bool m_IsBoxed;
-            readonly bool m_IsSubFoldout;
-            readonly bool m_NoSpaceAtEnd;
-            readonly bool m_IsIndented;
-
-            readonly GUIContent m_Title;
-            readonly string m_HelpUrl;
-
-            ExpandedState<TEnum, TState> m_State;
-            readonly TEnum m_Mask;
-
-            readonly Enabler m_Enabler;
-            readonly SwitchEnabler m_SwitchEnabler;
-
-            public FoldoutGroupDrawerInternal(GUIContent title, TEnum mask, ExpandedState<TEnum, TState> state,
-                                              Enabler enabler, SwitchEnabler switchEnabler, FoldoutOption options = FoldoutOption.None, params ActionDrawer[] actionDrawers)
-            {
-                m_IsBoxed = (options & FoldoutOption.Boxed) != 0;
-                m_IsIndented = (options & FoldoutOption.Indent) != 0;
-                m_IsSubFoldout = (options & FoldoutOption.SubFoldout) != 0;
-                m_NoSpaceAtEnd = (options & FoldoutOption.NoSpaceAtEnd) != 0;
-
-                m_ActionDrawers = actionDrawers;
-                m_Title = title;
-                m_State = state;
-                m_Mask = mask;
-
-                var helpUrlAttribute = (HelpURLAttribute)mask
-                    .GetType()
-                    .GetCustomAttributes(typeof(HelpURLAttribute), false)
-                    .FirstOrDefault();
-
-                m_HelpUrl = helpUrlAttribute == null ? string.Empty : $"{helpUrlAttribute.URL}#{mask}";
-
-                m_Enabler = enabler;
-                m_SwitchEnabler = switchEnabler;
-            }
-
-            void IDrawer.Draw(TData data, Editor owner)
-            {
-                bool expended = m_State[m_Mask];
-                bool newExpended;
-
-                if (m_IsSubFoldout)
-                {
-                    newExpended = CoreEditorUtils.DrawSubHeaderFoldout(m_Title, expended, m_IsBoxed);
-                }
-                else
-                {
-                    CoreEditorUtils.DrawSplitter(m_IsBoxed);
-                    newExpended = CoreEditorUtils.DrawHeaderFoldout(m_Title,
-                        expended,
-                        m_IsBoxed,
-                        m_Enabler == null ? (Func<bool>)null : () => m_Enabler(data, owner),
-                        m_SwitchEnabler == null ? (Action)null : () => m_SwitchEnabler(data, owner),
-                        m_HelpUrl);
-                }
-                if (newExpended ^ expended)
-                    m_State[m_Mask] = newExpended;
-                if (!newExpended)
-                    return;
-
-                if (m_IsIndented)
-                    ++EditorGUI.indentLevel;
-                for (var i = 0; i < m_ActionDrawers.Length; i++)
-                    m_ActionDrawers[i](data, owner);
-                if (m_IsIndented)
-                    --EditorGUI.indentLevel;
-                if (!m_NoSpaceAtEnd)
-                    EditorGUILayout.Space();
             }
         }
 
@@ -473,7 +308,7 @@ namespace UnityEditor.Rendering
             CoreEditorDrawer<T2Data>.ActionDrawer[] m_SourceDrawers;
 
             public SelectDrawerInternal(DataSelect<T2Data> dataSelect,
-                                        params CoreEditorDrawer<T2Data>.ActionDrawer[] otherDrawers)
+                params CoreEditorDrawer<T2Data>.ActionDrawer[] otherDrawers)
             {
                 m_SourceDrawers = otherDrawers;
                 m_DataSelect = dataSelect;
@@ -520,7 +355,7 @@ namespace UnityEditor.Rendering
         {
             return FoldoutGroup(EditorGUIUtility.TrTextContent(title), mask, state, contentDrawers);
         }
-
+        
         /// <summary> Create an IDrawer foldout header using an ExpandedState </summary>
         /// <typeparam name="TEnum">Type of the mask used</typeparam>
         /// <typeparam name="TState">Type of the persistent state</typeparam>
@@ -616,10 +451,44 @@ namespace UnityEditor.Rendering
         }
 
         // This one is private as we do not want to have unhandled advanced switch. Change it if necessary.
-        static IDrawer FoldoutGroup<TEnum, TState>(GUIContent title, TEnum mask, ExpandedState<TEnum, TState> state, FoldoutOption options, Enabler showAdditionalProperties, SwitchEnabler switchAdditionalProperties, params ActionDrawer[] contentDrawers)
+        static IDrawer FoldoutGroup<TEnum, TState>(GUIContent title, TEnum mask, ExpandedState<TEnum, TState> state, FoldoutOption options, Enabler isAdvanced, SwitchEnabler switchAdvanced, params ActionDrawer[] contentDrawers)
             where TEnum : struct, IConvertible
         {
-            return new FoldoutGroupDrawerInternal<TEnum, TState>(title, mask, state, showAdditionalProperties, switchAdditionalProperties, options, contentDrawers);
+            return Group((data, owner) =>
+            {
+                bool isBoxed = (options & FoldoutOption.Boxed) != 0;
+                bool isIndented = (options & FoldoutOption.Indent) != 0;
+                bool isSubFoldout = (options & FoldoutOption.SubFoldout) != 0;
+                bool noSpaceAtEnd = (options & FoldoutOption.NoSpaceAtEnd) != 0;
+                bool expended = state[mask];
+                bool newExpended = expended;
+                if (isSubFoldout)
+                {
+                    newExpended = CoreEditorUtils.DrawSubHeaderFoldout(title, expended, isBoxed,
+                        isAdvanced == null ? (Func<bool>)null : () => isAdvanced(data, owner),
+                        switchAdvanced == null ? (Action)null : () => switchAdvanced(data, owner));
+                }
+                else
+                {
+                    CoreEditorUtils.DrawSplitter(isBoxed);
+                    newExpended = CoreEditorUtils.DrawHeaderFoldout(title, expended, isBoxed,
+                        isAdvanced == null ? (Func<bool>)null : () => isAdvanced(data, owner),
+                        switchAdvanced == null ? (Action)null : () => switchAdvanced(data, owner));
+                }
+                if (newExpended ^ expended)
+                    state[mask] = newExpended;
+                if (newExpended)
+                {
+                    if (isIndented)
+                        ++EditorGUI.indentLevel;
+                    for (var i = 0; i < contentDrawers.Length; i++)
+                        contentDrawers[i](data, owner);
+                    if (isIndented)
+                        --EditorGUI.indentLevel;
+                    if (!noSpaceAtEnd)
+                        EditorGUILayout.Space();
+                }
+            });
         }
 
         /// <summary> Helper to draw a foldout with an advanced switch on it. </summary>
@@ -634,7 +503,6 @@ namespace UnityEditor.Rendering
         /// <param name="advancedContent"> The content of the foldout header only visible if advanced mode is active and if foldout is expended. </param>
         /// <param name="options">Drawing options</param>
         /// <returns>A IDrawer object</returns>
-        [Obsolete("Use AdditionalPropertiesFoldoutGroup instead.")]
         public static IDrawer AdvancedFoldoutGroup<TEnum, TState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState, Enabler isAdvanced, SwitchEnabler switchAdvanced, IDrawer normalContent, IDrawer advancedContent, FoldoutOption options = FoldoutOption.Indent)
             where TEnum : struct, IConvertible
         {
@@ -653,7 +521,6 @@ namespace UnityEditor.Rendering
         /// <param name="advancedContent"> The content of the foldout header only visible if advanced mode is active and if foldout is expended. </param>
         /// <param name="options">Drawing options</param>
         /// <returns>A IDrawer object</returns>
-        [Obsolete("Use AdditionalPropertiesFoldoutGroup instead.")]
         public static IDrawer AdvancedFoldoutGroup<TEnum, TState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState, Enabler isAdvanced, SwitchEnabler switchAdvanced, ActionDrawer normalContent, IDrawer advancedContent, FoldoutOption options = FoldoutOption.Indent)
             where TEnum : struct, IConvertible
         {
@@ -672,7 +539,6 @@ namespace UnityEditor.Rendering
         /// <param name="advancedContent"> The content of the foldout header only visible if advanced mode is active and if foldout is expended. </param>
         /// <param name="options">Drawing options</param>
         /// <returns>A IDrawer object</returns>
-        [Obsolete("Use AdditionalPropertiesFoldoutGroup instead.")]
         public static IDrawer AdvancedFoldoutGroup<TEnum, TState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState, Enabler isAdvanced, SwitchEnabler switchAdvanced, IDrawer normalContent, ActionDrawer advancedContent, FoldoutOption options = FoldoutOption.Indent)
             where TEnum : struct, IConvertible
         {
@@ -691,121 +557,13 @@ namespace UnityEditor.Rendering
         /// <param name="advancedContent"> The content of the foldout header only visible if advanced mode is active and if foldout is expended. </param>
         /// <param name="options">Drawing options</param>
         /// <returns>A IDrawer object</returns>
-        [Obsolete("Use AdditionalPropertiesFoldoutGroup instead.")]
         public static IDrawer AdvancedFoldoutGroup<TEnum, TState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState, Enabler isAdvanced, SwitchEnabler switchAdvanced, ActionDrawer normalContent, ActionDrawer advancedContent, FoldoutOption options = FoldoutOption.Indent)
             where TEnum : struct, IConvertible
         {
-            return FoldoutGroup(foldoutTitle, foldoutMask, foldoutState, options, isAdvanced, switchAdvanced, normalContent,
-                Conditional((serialized, owner) => isAdvanced(serialized, owner) && foldoutState[foldoutMask], advancedContent).Draw);
-        }
-
-        /// <summary>
-        /// Helper to draw a foldout with additional properties.
-        /// </summary>
-        /// <typeparam name="TEnum">Type of the foldout mask used.</typeparam>
-        /// <typeparam name="TState">Type of the persistent foldout state.</typeparam>
-        /// <typeparam name="TAPEnum">Type of the additional properties mask used.</typeparam>
-        /// <typeparam name="TAPState">Type of the persistent additional properties state.</typeparam>
-        /// <param name="foldoutTitle">Title wanted for this foldout header</param>
-        /// <param name="foldoutMask">Bit mask (enum) used to define the boolean saving the state in ExpandedState</param>
-        /// <param name="foldoutState">The ExpandedState describing the component</param>
-        /// <param name="additionalPropertiesMask">Bit mask (enum) used to define the boolean saving the state in AdditionalPropertiesState</param>
-        /// <param name="additionalPropertiesState">The AdditionalPropertiesState describing the component</param>
-        /// <param name="normalContent"> The content of the foldout header always visible if expended. </param>
-        /// <param name="additionalContent">The content of the foldout header only visible if additional properties are shown and if foldout is expanded.</param>
-        /// <param name="options">Drawing options</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer AdditionalPropertiesFoldoutGroup<TEnum, TState, TAPEnum, TAPState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState,
-            TAPEnum additionalPropertiesMask, AdditionalPropertiesState<TAPEnum, TAPState> additionalPropertiesState, IDrawer normalContent, IDrawer additionalContent, FoldoutOption options = FoldoutOption.Indent)
-            where TEnum : struct, IConvertible
-            where TAPEnum : struct, IConvertible
-        {
-            return AdditionalPropertiesFoldoutGroup(foldoutTitle, foldoutMask, foldoutState, additionalPropertiesMask, additionalPropertiesState, normalContent.Draw, additionalContent.Draw, options);
-        }
-
-        /// <summary>
-        /// Helper to draw a foldout with additional properties.
-        /// </summary>
-        /// <typeparam name="TEnum">Type of the foldout mask used.</typeparam>
-        /// <typeparam name="TState">Type of the persistent foldout state.</typeparam>
-        /// <typeparam name="TAPEnum">Type of the additional properties mask used.</typeparam>
-        /// <typeparam name="TAPState">Type of the persistent additional properties state.</typeparam>
-        /// <param name="foldoutTitle">Title wanted for this foldout header</param>
-        /// <param name="foldoutMask">Bit mask (enum) used to define the boolean saving the state in ExpandedState</param>
-        /// <param name="foldoutState">The ExpandedState describing the component</param>
-        /// <param name="additionalPropertiesMask">Bit mask (enum) used to define the boolean saving the state in AdditionalPropertiesState</param>
-        /// <param name="additionalPropertiesState">The AdditionalPropertiesState describing the component</param>
-        /// <param name="normalContent"> The content of the foldout header always visible if expended. </param>
-        /// <param name="additionalContent">The content of the foldout header only visible if additional properties are shown and if foldout is expanded.</param>
-        /// <param name="options">Drawing options</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer AdditionalPropertiesFoldoutGroup<TEnum, TState, TAPEnum, TAPState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState,
-            TAPEnum additionalPropertiesMask, AdditionalPropertiesState<TAPEnum, TAPState> additionalPropertiesState, ActionDrawer normalContent, IDrawer additionalContent, FoldoutOption options = FoldoutOption.Indent)
-            where TEnum : struct, IConvertible
-            where TAPEnum : struct, IConvertible
-        {
-            return AdditionalPropertiesFoldoutGroup(foldoutTitle, foldoutMask, foldoutState, additionalPropertiesMask, additionalPropertiesState, normalContent, additionalContent.Draw, options);
-        }
-
-        /// <summary>
-        /// Helper to draw a foldout with additional properties.
-        /// </summary>
-        /// <typeparam name="TEnum">Type of the foldout mask used.</typeparam>
-        /// <typeparam name="TState">Type of the persistent foldout state.</typeparam>
-        /// <typeparam name="TAPEnum">Type of the additional properties mask used.</typeparam>
-        /// <typeparam name="TAPState">Type of the persistent additional properties state.</typeparam>
-        /// <param name="foldoutTitle">Title wanted for this foldout header</param>
-        /// <param name="foldoutMask">Bit mask (enum) used to define the boolean saving the state in ExpandedState</param>
-        /// <param name="foldoutState">The ExpandedState describing the component</param>
-        /// <param name="additionalPropertiesMask">Bit mask (enum) used to define the boolean saving the state in AdditionalPropertiesState</param>
-        /// <param name="additionalPropertiesState">The AdditionalPropertiesState describing the component</param>
-        /// <param name="normalContent"> The content of the foldout header always visible if expended. </param>
-        /// <param name="additionalContent">The content of the foldout header only visible if additional properties are shown and if foldout is expanded.</param>
-        /// <param name="options">Drawing options</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer AdditionalPropertiesFoldoutGroup<TEnum, TState, TAPEnum, TAPState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState,
-            TAPEnum additionalPropertiesMask, AdditionalPropertiesState<TAPEnum, TAPState> additionalPropertiesState, IDrawer normalContent, ActionDrawer additionalContent, FoldoutOption options = FoldoutOption.Indent)
-            where TEnum : struct, IConvertible
-            where TAPEnum : struct, IConvertible
-        {
-            return AdditionalPropertiesFoldoutGroup(foldoutTitle, foldoutMask, foldoutState, additionalPropertiesMask, additionalPropertiesState, normalContent.Draw, additionalContent, options);
-        }
-
-        /// <summary>
-        /// Helper to draw a foldout with additional properties.
-        /// </summary>
-        /// <typeparam name="TEnum">Type of the foldout mask used.</typeparam>
-        /// <typeparam name="TState">Type of the persistent foldout state.</typeparam>
-        /// <typeparam name="TAPEnum">Type of the additional properties mask used.</typeparam>
-        /// <typeparam name="TAPState">Type of the persistent additional properties state.</typeparam>
-        /// <param name="foldoutTitle">Title wanted for this foldout header</param>
-        /// <param name="foldoutMask">Bit mask (enum) used to define the boolean saving the state in ExpandedState</param>
-        /// <param name="foldoutState">The ExpandedState describing the component</param>
-        /// <param name="additionalPropertiesMask">Bit mask (enum) used to define the boolean saving the state in AdditionalPropertiesState</param>
-        /// <param name="additionalPropertiesState">The AdditionalPropertiesState describing the component</param>
-        /// <param name="normalContent"> The content of the foldout header always visible if expended. </param>
-        /// <param name="additionalContent">The content of the foldout header only visible if additional properties are shown and if foldout is expanded.</param>
-        /// <param name="options">Drawing options</param>
-        /// <returns>A IDrawer object</returns>
-        public static IDrawer AdditionalPropertiesFoldoutGroup<TEnum, TState, TAPEnum, TAPState>(GUIContent foldoutTitle, TEnum foldoutMask, ExpandedState<TEnum, TState> foldoutState,
-            TAPEnum additionalPropertiesMask, AdditionalPropertiesState<TAPEnum, TAPState> additionalPropertiesState, ActionDrawer normalContent, ActionDrawer additionalContent, FoldoutOption options = FoldoutOption.Indent)
-            where TEnum : struct, IConvertible
-            where TAPEnum : struct, IConvertible
-        {
-            bool Enabler(TData data, Editor owner)
-            {
-                return additionalPropertiesState[additionalPropertiesMask];
-            }
-
-            void SwitchEnabler(TData data, Editor owner)
-            {
-                additionalPropertiesState[additionalPropertiesMask] = !additionalPropertiesState[additionalPropertiesMask];
-            }
-
-            return FoldoutGroup(foldoutTitle, foldoutMask, foldoutState, options, Enabler, SwitchEnabler,
+            return FoldoutGroup(foldoutTitle, foldoutMask, foldoutState, options, isAdvanced, switchAdvanced,
                 normalContent,
-                ConditionalWithAdditionalProperties((serialized, owner) => additionalPropertiesState[additionalPropertiesMask] && foldoutState[foldoutMask], additionalPropertiesState.GetAnimation(additionalPropertiesMask), additionalContent).Draw
-            );
+                Conditional((serialized, owner) => isAdvanced(serialized, owner) && foldoutState[foldoutMask], advancedContent).Draw
+                );
         }
     }
 

@@ -48,10 +48,9 @@ real3 SurfaceGradientFromTriplanarProjection(real3 nrmVertexNormal, real3 tripla
 {
     const real w0 = triplanarWeights.x, w1 = triplanarWeights.y, w2 = triplanarWeights.z;
 
-    // Assume derivXplane, derivYPlane and derivZPlane sampled using (z,y), (x,z) and (x,y) respectively
-    // (ie using Morten's convention http://jcgt.org/published/0009/03/04/ p80-81 for left handed worldspace)
+    // assume deriv_xplane, deriv_yplane and deriv_zplane sampled using (z,y), (z,x) and (x,y) respectively.
     // positive scales of the look-up coordinate will work as well but for negative scales the derivative components will need to be negated accordingly.
-    real3 volumeGrad = real3(w2 * deriv_zplane.x + w1 * deriv_yplane.x, w2 * deriv_zplane.y + w0 * deriv_xplane.y, w0 * deriv_xplane.x + w1 * deriv_yplane.y);
+    real3 volumeGrad = real3(w2 * deriv_zplane.x + w1 * deriv_yplane.y, w2 * deriv_zplane.y + w0 * deriv_xplane.y, w0 * deriv_xplane.x + w1 * deriv_yplane.x);
 
     return SurfaceGradientFromVolumeGradient(nrmVertexNormal, volumeGrad);
 }
@@ -67,12 +66,6 @@ real2 ConvertTangentSpaceNormalToHeightMapGradient(real2 normalXY, real rcpNorma
     return normalXY * (-rcpNormalZ * scale);
 }
 
-real3 SurfaceGradientFromTangentSpaceNormalAndFromTBN(real3 normalTS, real3 vT, real3 vB, real scale = 1.0)
-{
-    float2 deriv = ConvertTangentSpaceNormalToHeightMapGradient(normalTS.xy, rcp(max(normalTS.z, REAL_EPS)), scale);
-    return SurfaceGradientFromTBN(deriv, vT, vB);
-}
-
 // Converts tangent space normal to slopes (height map gradient).
 real2 UnpackDerivativeNormalRGB(real4 packedNormal, real scale = 1.0)
 {
@@ -86,7 +79,7 @@ real2 UnpackDerivativeNormalRGB(real4 packedNormal, real scale = 1.0)
 real2 UnpackDerivativeNormalAG(real4 packedNormal, real scale = 1.0)
 {
     real2 vT   = packedNormal.ag * 2.0 - 1.0;                      // Unsigned to signed
-    real  rcpZ = rsqrt(max(1 - Sq(vT.x) - Sq(vT.y), HALF_MIN_SQRT)); // Clamp to avoid INF
+    real  rcpZ = rsqrt(max(1 - Sq(vT.x) - Sq(vT.y), Sq(REAL_EPS))); // Clamp to avoid INF
 
     return ConvertTangentSpaceNormalToHeightMapGradient(vT.xy, rcpZ, scale);
 }

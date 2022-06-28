@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering.UI;
-using UnityEngine.UI;
 
 namespace UnityEngine.Rendering
 {
@@ -70,8 +69,6 @@ namespace UnityEngine.Rendering
         /// </summary>
         public bool refreshEditorRequested;
 
-        int? m_RequestedPanelIndex;
-
         GameObject m_Root;
         DebugUIHandlerCanvas m_RootUICanvas;
 
@@ -86,14 +83,28 @@ namespace UnityEngine.Rendering
         /// </summary>
         public bool displayEditorUI => m_EditorOpen;
         /// <summary>
-        /// Controls whether the hotkey for opening and closing the debug window is enabled.
-        /// </summary>
-        public bool enableWindowHotkey = true;
-        /// <summary>
         /// Toggle the debug window.
         /// </summary>
         /// <param name="open">State of the debug window.</param>
         public void ToggleEditorUI(bool open) => m_EditorOpen = open;
+
+        private bool m_EnableRuntimeUI = true;
+
+        /// <summary>
+        /// Controls whether runtime UI can be enabled. When this is set to false, there will be no overhead
+        /// from debug GameObjects or runtime initialization.
+        /// </summary>
+        public bool enableRuntimeUI
+        {
+            get => m_EnableRuntimeUI;
+            set
+            {
+                if (value != m_EnableRuntimeUI)
+                {
+                    m_EnableRuntimeUI = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Displays the runtime version of the debug window.
@@ -105,16 +116,10 @@ namespace UnityEngine.Rendering
             {
                 if (value)
                 {
-                    m_Root = UnityObject.Instantiate(Resources.Load<Transform>("DebugUICanvas")).gameObject;
+                    m_Root = UnityObject.Instantiate(Resources.Load<Transform>("DebugUI Canvas")).gameObject;
                     m_Root.name = "[Debug Canvas]";
                     m_Root.transform.localPosition = Vector3.zero;
                     m_RootUICanvas = m_Root.GetComponent<DebugUIHandlerCanvas>();
-
-#if UNITY_ANDROID || UNITY_IPHONE || UNITY_TVOS || UNITY_SWITCH
-                    var canvasScaler = m_Root.GetComponent<CanvasScaler>();
-                    canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-#endif
-
                     m_Root.SetActive(true);
                 }
                 else
@@ -168,12 +173,12 @@ namespace UnityEngine.Rendering
         }
 
         /// <summary>
-        /// Request the runtime debug UI be redrawn on the next update.
+        /// Redraw the runtime debug UI.
         /// </summary>
         public void ReDrawOnScreenDebug()
         {
             if (displayRuntimeUI)
-                m_RootUICanvas?.RequestHierarchyReset();
+                m_RootUICanvas?.ResetAllHierarchy();
         }
 
         /// <summary>
@@ -214,12 +219,6 @@ namespace UnityEngine.Rendering
             m_RootUICanvas.ChangeSelection(widget, fromNext);
         }
 
-        internal void SetScrollTarget(DebugUIHandlerWidget widget)
-        {
-            if (m_RootUICanvas != null)
-                m_RootUICanvas.SetScrollTarget(widget);
-        }
-
         void CheckPersistentCanvas()
         {
             if (m_RootUIPersistentCanvas == null)
@@ -228,7 +227,7 @@ namespace UnityEngine.Rendering
 
                 if (uiManager == null)
                 {
-                    m_PersistentRoot = UnityObject.Instantiate(Resources.Load<Transform>("DebugUIPersistentCanvas")).gameObject;
+                    m_PersistentRoot = UnityObject.Instantiate(Resources.Load<Transform>("DebugUI Persistent Canvas")).gameObject;
                     m_PersistentRoot.name = "[Debug Canvas - Persistent]";
                     m_PersistentRoot.transform.localPosition = Vector3.zero;
                 }
@@ -260,25 +259,6 @@ namespace UnityEngine.Rendering
         void OnPanelDirty(DebugUI.Panel panel)
         {
             onSetDirty();
-        }
-
-        /// <summary>
-        /// Request DebugWindow to open the specified panel.
-        /// </summary>
-        /// <param name="index">Index of the debug window panel to activate.</param>
-        public void RequestEditorWindowPanelIndex(int index)
-        {
-            // Similar to RefreshEditor(), this function is required to bypass a dependency problem where DebugWindow
-            // cannot be accessed from the Core.Runtime assembly. Should there be a better way to allow editor-dependent
-            // features in DebugUI?
-            m_RequestedPanelIndex = index;
-        }
-
-        internal int? GetRequestedEditorWindowPanelIndex()
-        {
-            int? requestedIndex = m_RequestedPanelIndex;
-            m_RequestedPanelIndex = null;
-            return requestedIndex;
         }
 
         // TODO: Optimally we should use a query path here instead of a display name

@@ -12,7 +12,7 @@ namespace UnityEditor.Rendering.LookDev
     /// <summary>
     /// Class containing a collection of Environment
     /// </summary>
-    [CoreRPHelpURL("Environment-Library")]
+    [HelpURL(Documentation.baseURLHDRP + Documentation.version + Documentation.subURL + "Environment-Library" + Documentation.endURL)]
     public class EnvironmentLibrary : ScriptableObject
     {
         [field: SerializeField]
@@ -153,7 +153,7 @@ namespace UnityEditor.Rendering.LookDev
         }
 
         // Don't use ImGUI
-        public sealed override void OnInspectorGUI() {}
+        public sealed override void OnInspectorGUI() { }
     }
 
     class EnvironmentLibraryCreator : ProjectWindowCallback.EndNameEditAction
@@ -177,7 +177,7 @@ namespace UnityEditor.Rendering.LookDev
             m_Field = null;
         }
 
-        [MenuItem("Assets/Create/Rendering/Environment Library (Look Dev)", priority = CoreUtils.Sections.section8 + CoreUtils.Priorities.assetsCreateRenderingMenuPriority)]
+        [MenuItem("Assets/Create/LookDev/Environment Library", priority = 2000)]
         static void Create()
         {
             var icon = EditorGUIUtility.FindTexture("ScriptableObject Icon");

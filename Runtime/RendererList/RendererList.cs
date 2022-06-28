@@ -8,7 +8,6 @@ namespace UnityEngine.Experimental.Rendering
     /// <summary>
     /// Structure holding RendererList information used to draw renderers.
     /// </summary>
-    [Obsolete("Use the updated RendererList API which is defined in the UnityEngine.Rendering.RendererUtils namespace.")]
     public struct RendererList
     {
         static readonly ShaderTagId s_EmptyName = new ShaderTagId("");
@@ -100,7 +99,6 @@ namespace UnityEngine.Experimental.Rendering
     /// <summary>
     /// Renderer list creation descriptor.
     /// </summary>
-    [Obsolete("Use the updated RendererList API which is defined in the UnityEngine.Rendering.RendererUtils namespace.")]
     public struct RendererListDesc
     {
         /// <summary>

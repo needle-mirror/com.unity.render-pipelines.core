@@ -5,7 +5,7 @@ namespace UnityEngine.Rendering
     /// <summary>
     /// A generic Volume component holding a <see cref="VolumeProfile"/>.
     /// </summary>
-    [CoreRPHelpURL("Volumes", "com.unity.render-pipelines.high-definition")]
+    [HelpURL(Documentation.baseURLHDRP + Documentation.version + Documentation.subURL + "Volumes" + Documentation.endURL)]
     [ExecuteAlways]
     [AddComponentMenu("Miscellaneous/Volume")]
     public class Volume : MonoBehaviour
@@ -19,7 +19,7 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The Volume priority in the stack. A higher value means higher priority. This supports negative values.
         /// </summary>
-        [Tooltip("When multiple Volumes affect the same settings, Unity uses this value to determine which Volume to use. A Volume with the highest Priority value takes precedence.")]
+        [Tooltip("Sets the Volume priority in the stack. A higher value means higher priority. You can use negative values.")]
         public float priority = 0f;
 
         /// <summary>
@@ -197,7 +197,6 @@ namespace UnityEngine.Rendering
 
             colliders.Clear();
         }
-
 #endif
     }
 }

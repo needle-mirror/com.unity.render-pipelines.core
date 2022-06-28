@@ -18,5 +18,6 @@ namespace UnityEngine.Rendering
             UnityEngine.RectInt normalizedCamViewport = new UnityEngine.RectInt(0, 0, camera.pixelWidth, camera.pixelHeight);
             cmd.DrawOcclusionMesh(normalizedCamViewport);
         }
+
     }
 }

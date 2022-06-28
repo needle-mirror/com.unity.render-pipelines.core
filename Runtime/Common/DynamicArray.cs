@@ -6,7 +6,7 @@ namespace UnityEngine.Rendering
     /// Generic growable array.
     /// </summary>
     /// <typeparam name="T">Type of the array.</typeparam>
-    public class DynamicArray<T> where T : new()
+    public class DynamicArray<T> where T: new()
     {
         T[] m_Array = null;
 
@@ -112,4 +112,5 @@ namespace UnityEngine.Rendering
             }
         }
     }
+
 }

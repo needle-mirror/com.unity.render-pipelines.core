@@ -126,13 +126,13 @@ namespace UnityEngine.Rendering
     /// This sample code shows how to make a custom parameter holding a <c>float</c>:
     /// <code>
     /// using UnityEngine.Rendering;
-    ///
+    /// 
     /// [Serializable]
     /// public sealed class MyFloatParameter : VolumeParameter&lt;float&gt;
     /// {
     ///     public MyFloatParameter(float value, bool overrideState = false)
     ///         : base(value, overrideState) { }
-    ///
+    /// 
     ///     public sealed override void Interp(float from, float to, float t)
     ///     {
     ///         m_Value = from + (to - from) * t;
@@ -421,7 +421,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int min;
 
         /// <summary>
@@ -450,7 +449,7 @@ namespace UnityEngine.Rendering
     }
 
     /// <summary>
-    /// A <see cref="VolumeParameter"/> that holds a non-interpolating <c>int</c> value that
+    /// A <see cref="VolumeParameter"/> that holds a non-interpolating <c>int</c> value that 
     /// clamped to a minimum value.
     /// </summary>
     /// <seealso cref="IntParameter"/>
@@ -466,7 +465,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int min;
 
         /// <summary>
@@ -511,7 +509,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int max;
 
         /// <summary>
@@ -540,7 +537,7 @@ namespace UnityEngine.Rendering
     }
 
     /// <summary>
-    /// A <see cref="VolumeParameter"/> that holds a non-interpolating <c>int</c> value that
+    /// A <see cref="VolumeParameter"/> that holds a non-interpolating <c>int</c> value that 
     /// clamped to a maximum value.
     /// </summary>
     /// <seealso cref="IntParameter"/>
@@ -556,7 +553,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int max;
 
         /// <summary>
@@ -601,13 +597,11 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int min;
 
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int max;
 
         /// <summary>
@@ -638,7 +632,7 @@ namespace UnityEngine.Rendering
     }
 
     /// <summary>
-    /// A <see cref="VolumeParameter"/> that holds a non-interpolating <c>int</c> value
+    /// A <see cref="VolumeParameter"/> that holds a non-interpolating <c>int</c> value  
     /// clamped between a minimum and a maximum value.
     /// </summary>
     /// <seealso cref="IntParameter"/>
@@ -654,13 +648,11 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int min;
 
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public int max;
 
         /// <summary>
@@ -767,7 +759,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float min;
 
         /// <summary>
@@ -814,7 +805,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float min;
 
         /// <summary>
@@ -860,7 +850,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float max;
 
         /// <summary>
@@ -907,7 +896,6 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float max;
 
         /// <summary>
@@ -954,13 +942,11 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float min;
 
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float max;
 
         /// <summary>
@@ -1009,13 +995,11 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float min;
 
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float max;
 
         /// <summary>
@@ -1064,13 +1048,11 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float min;
 
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float max;
 
         /// <summary>
@@ -1135,13 +1117,11 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// The minimum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float min;
 
         /// <summary>
         /// The maximum value to clamp this parameter to.
         /// </summary>
-        [NonSerialized]
         public float max;
 
         /// <summary>
@@ -1185,19 +1165,16 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// Is this color HDR?
         /// </summary>
-        [NonSerialized]
         public bool hdr = false;
 
         /// <summary>
         /// Should the alpha channel be editable in the editor?
         /// </summary>
-        [NonSerialized]
         public bool showAlpha = true;
 
         /// <summary>
         /// Should the eye dropper be visible in the editor?
         /// </summary>
-        [NonSerialized]
         public bool showEyeDropper = true;
 
         /// <summary>
@@ -1262,13 +1239,11 @@ namespace UnityEngine.Rendering
         /// <summary>
         /// Specifies whether you can edit the alpha channel in the Inspector or not.
         /// </summary>
-        [NonSerialized]
         public bool showAlpha = true;
 
         /// <summary>
         /// Specifies whether the eye dropper is visible in the editor or not.
         /// </summary>
-        [NonSerialized]
         public bool showEyeDropper = true;
 
         /// <summary>
@@ -1310,7 +1285,7 @@ namespace UnityEngine.Rendering
         /// <param name="value">The initial value to store in the parameter.</param>
         /// <param name="overrideState">The initial override state for the parameter.</param>
         public Vector2Parameter(Vector2 value, bool overrideState = false)
-            : base(value, overrideState) {}
+            : base(value, overrideState) { }
 
         /// <summary>
         /// Interpolates between two <c>Vector2</c> values.
@@ -1354,7 +1329,7 @@ namespace UnityEngine.Rendering
         /// <param name="value">The initial value to store in the parameter.</param>
         /// <param name="overrideState">The initial override state for the parameter.</param>
         public Vector3Parameter(Vector3 value, bool overrideState = false)
-            : base(value, overrideState) {}
+            : base(value, overrideState) { }
 
         /// <summary>
         /// Interpolates between two <c>Vector3</c> values.
@@ -1399,7 +1374,7 @@ namespace UnityEngine.Rendering
         /// <param name="value">The initial value to store in the parameter.</param>
         /// <param name="overrideState">The initial override state for the parameter.</param>
         public Vector4Parameter(Vector4 value, bool overrideState = false)
-            : base(value, overrideState) {}
+            : base(value, overrideState) { }
 
         /// <summary>
         /// Interpolates between two <c>Vector4</c> values.
@@ -1500,15 +1475,16 @@ namespace UnityEngine.Rendering
     /// A <see cref="VolumeParameter"/> that holds a <c>Cubemap</c> value.
     /// </summary>
     [Serializable, DebuggerDisplay(k_DebuggerDisplay)]
-    public class CubemapParameter : VolumeParameter<Texture>
+    public class CubemapParameter : VolumeParameter<Cubemap>
     {
         /// <summary>
         /// Creates a new <seealso cref="CubemapParameter"/> instance.
         /// </summary>
         /// <param name="value">The initial value to store in the parameter.</param>
         /// <param name="overrideState">The initial override state for the parameter.</param>
-        public CubemapParameter(Texture value, bool overrideState = false)
+        public CubemapParameter(Cubemap value, bool overrideState = false)
             : base(value, overrideState) {}
+
         // TODO: Cubemap interpolation
     }
 

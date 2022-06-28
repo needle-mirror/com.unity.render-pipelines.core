@@ -47,16 +47,6 @@ real3 SHEvalLinearL0L1(real3 N, real4 shAr, real4 shAg, real4 shAb)
     return x1;
 }
 
-real3 SHEvalLinearL1(real3 N, real3 shAr, real3 shAg, real3 shAb)
-{
-    real3 x1;
-    x1.r = dot(shAr, N);
-    x1.g = dot(shAg, N);
-    x1.b = dot(shAb, N);
-
-    return x1;
-}
-
 real3 SHEvalLinearL2(real3 N, real4 shBr, real4 shBg, real4 shBb, real4 shC)
 {
     real3 x2;
@@ -271,7 +261,6 @@ real3 UnpackLightmapDoubleLDR(real4 encodedColor, real4 decodeInstructions)
     return encodedColor.rgb * decodeInstructions.x;
 }
 
-#ifndef BUILTIN_TARGET_API
 real3 DecodeLightmap(real4 encodedIlluminance, real4 decodeInstructions)
 {
 #if defined(UNITY_LIGHTMAP_RGBM_ENCODING)
@@ -282,7 +271,6 @@ real3 DecodeLightmap(real4 encodedIlluminance, real4 decodeInstructions)
     return encodedIlluminance.rgb;
 #endif
 }
-#endif
 
 real3 DecodeHDREnvironment(real4 encodedIrradiance, real4 decodeInstructions)
 {

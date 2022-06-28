@@ -2,7 +2,6 @@ using UnityEngine;
 using System;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
-using UnityEngine.Experimental.Rendering;
 
 namespace UnityEditor.Rendering.LookDev
 {
@@ -75,7 +74,7 @@ namespace UnityEditor.Rendering.LookDev
         }
 
         internal static float ClampLatitude(float value) => Mathf.Clamp(value, -90, 90);
-
+        
         internal static float ClampLongitude(float value)
         {
             value = value % 360f;
@@ -86,7 +85,7 @@ namespace UnityEditor.Rendering.LookDev
 
         internal void UpdateSunPosition(Light sun)
             => sun.transform.rotation = Quaternion.Euler(sunLatitude, rotation + sunLongitude, 0f);
-
+        
         /// <summary>
         /// Compute sun position to be brightest spot of the sky
         /// </summary>
@@ -123,11 +122,11 @@ namespace UnityEditor.Rendering.LookDev
         /// <param name="sky">Editor version of the datas</param>
         public UnityEngine.Rendering.LookDev.Sky sky
             => new UnityEngine.Rendering.LookDev.Sky()
-        {
-            cubemap = cubemap,
-            longitudeOffset = rotation,
-            exposure = exposure
-        };
+            {
+                cubemap = cubemap,
+                longitudeOffset = rotation,
+                exposure = exposure
+            };
 
         internal static Environment GetTemporaryEnvironmentForCubemap(Cubemap cubemap)
         {
@@ -153,7 +152,7 @@ namespace UnityEditor.Rendering.LookDev
         public sealed override VisualElement CreateInspectorGUI() => null;
 
         // Don't use ImGUI
-        public sealed override void OnInspectorGUI() {}
+        public sealed override void OnInspectorGUI() { }
 
         //but make preview in Project window
         override public Texture2D RenderStaticPreview(string assetPath, UnityEngine.Object[] subAssets, int width, int height)
@@ -197,7 +196,7 @@ namespace UnityEditor.Rendering.LookDev
 
         public Environment target => environment;
 
-        public EnvironmentElement() => Create(withPreview : true);
+        public EnvironmentElement() => Create(withPreview: true);
         public EnvironmentElement(bool withPreview, Action OnChangeCallback = null)
         {
             this.OnChangeCallback = OnChangeCallback;
@@ -268,8 +267,8 @@ namespace UnityEditor.Rendering.LookDev
             int width = k_SkyThumbnailWidth;
             int height = width >> 1;
 
-            RenderTexture temporaryRT = new RenderTexture(width, height, 0, GraphicsFormat.R8G8B8A8_SRGB);
-            Texture2D brightestPointTexture = new Texture2D(width, height, GraphicsFormat.R16G16B16A16_SFloat, TextureCreationFlags.None);
+            RenderTexture temporaryRT = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            Texture2D brightestPointTexture = new Texture2D(width, height, TextureFormat.RGBAHalf, false);
 
             // Convert cubemap to a 2D LatLong to read on CPU
             Graphics.Blit(environment.cubemap, temporaryRT, cubeToLatlongMaterial);
@@ -306,7 +305,7 @@ namespace UnityEditor.Rendering.LookDev
         {
             int height = width >> 1;
             RenderTexture oldActive = RenderTexture.active;
-            RenderTexture temporaryRT = new RenderTexture(width, height, 0, GraphicsFormat.R8G8B8A8_SRGB);
+            RenderTexture temporaryRT = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
             RenderTexture.active = temporaryRT;
             cubeToLatlongMaterial.SetTexture("_MainTex", environment.cubemap);
             cubeToLatlongMaterial.SetVector("_WindowParams",
@@ -327,7 +326,7 @@ namespace UnityEditor.Rendering.LookDev
             Rect skyRect = new Rect(0, 0, width, height);
             Renderer.DrawFullScreenQuad(skyRect);
 
-            Texture2D result = new Texture2D(width, height, GraphicsFormat.R8G8B8A8_SRGB, TextureCreationFlags.None);
+            Texture2D result = new Texture2D(width, height, TextureFormat.ARGB32, false);
             result.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
             result.Apply(false);
             RenderTexture.active = oldActive;

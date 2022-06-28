@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 namespace UnityEngine.Rendering
 {
@@ -103,10 +102,6 @@ namespace UnityEngine.Rendering
         /// If specified, when generating a constant buffer, use this explicit register.
         /// </summary>
         public int constantRegister;
-        /// <summary>
-        /// Path of the generated file
-        /// </summary>
-        public string sourcePath;
 
         /// <summary>
         /// GenerateHLSL attribute constructor.
@@ -120,12 +115,9 @@ namespace UnityEngine.Rendering
         /// <param name="containsPackedFields">Contains packed fields.</param>
         /// <param name="generateCBuffer">Generate a constant buffer.</param>
         /// <param name="constantRegister">When generating a constant buffer, specify the optional constant register.</param>
-        /// <param name="sourcePath">Location of the source file defining the C# type. (Automatically filled by compiler)</param>
         public GenerateHLSL(PackingRules rules = PackingRules.Exact, bool needAccessors = true, bool needSetters = false, bool needParamDebug = false, int paramDefinesStart = 1,
-                            bool omitStructDeclaration = false, bool containsPackedFields = false, bool generateCBuffer = false, int constantRegister = -1,
-                            [CallerFilePath] string sourcePath = null)
+                                bool omitStructDeclaration = false, bool containsPackedFields = false, bool generateCBuffer = false, int constantRegister = -1)
         {
-            this.sourcePath = sourcePath;
             packingRules = rules;
             this.needAccessors = needAccessors;
             this.needSetters = needSetters;
@@ -340,5 +332,6 @@ namespace UnityEngine.Rendering
     /// </summary>
     public struct ShaderGenUInt4
     {
+
     }
 }

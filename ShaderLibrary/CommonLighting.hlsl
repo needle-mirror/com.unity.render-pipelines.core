@@ -305,9 +305,9 @@ real ComputeWrappedPowerDiffuseLighting(real NdotL, real w, real p)
 // Ref: The Technical Art of Uncharted 4 - Brinck and Maximov 2016
 real ComputeMicroShadowing(real AO, real NdotL, real opacity)
 {
-    real aperture = 2.0 * AO * AO;
-    real microshadow = saturate(NdotL + aperture - 1.0);
-    return lerp(1.0, microshadow, opacity);
+	real aperture = 2.0 * AO * AO;
+	real microshadow = saturate(NdotL + aperture - 1.0);
+	return lerp(1.0, microshadow, opacity);
 }
 
 real3 ComputeShadowColor(real shadow, real3 shadowTint, real penumbraFlag)
@@ -356,7 +356,7 @@ real ClampNdotV(real NdotV)
 void GetBSDFAngle(real3 V, real3 L, real NdotL, real NdotV,
                   out real LdotV, out real NdotH, out real LdotH, out real invLenLV)
 {
-    // Optimized math. Ref: PBR Diffuse Lighting for GGX + Smith Microsurfaces (slide 114), assuming |L|=1 and |V|=1
+    // Optimized math. Ref: PBR Diffuse Lighting for GGX + Smith Microsurfaces (slide 114).
     LdotV = dot(L, V);
     invLenLV = rsqrt(max(2.0 * LdotV + 2.0, FLT_EPS));    // invLenLV = rcp(length(L + V)), clamp to avoid rsqrt(0) = inf, inf * 0 = NaN
     NdotH = saturate((NdotL + NdotV) * invLenLV);
@@ -441,7 +441,7 @@ real3x3 GetOrthoBasisViewNormal(real3 V, real3 N, real unclampedNdotV, bool test
     if (testSingularity && (abs(1.0 - unclampedNdotV) <= FLT_EPS))
     {
         // In this case N == V, and azimuth orientation around N shouldn't matter for the caller,
-        // we can use any quaternion-based method, like Frisvad or Reynold's (Pixar):
+        // we can use any quaternion-based method, like Frisvad or Reynold's (Pixar): 
         orthoBasisViewNormal = GetLocalFrame(N);
     }
     else
